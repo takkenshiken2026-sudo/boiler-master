@@ -2756,18 +2756,38 @@ function getTodayMissions(){
   });
 }
 
+function getTodayAnswerEntries(u){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const todayMs=today.getTime();
+  const tomorrowMs=todayMs+86400000;
+  return Object.entries(u.answers||{})
+    .filter(([,a])=>a.date>=todayMs&&a.date<tomorrowMs);
+}
+
+function getTodayCorrectStreak(u){
+  const todayAnswers=getTodayAnswerEntries(u)
+    .map(([qid,a])=>({qid,a}))
+    .sort((x,y)=>(Number(x.a.date)||0)-(Number(y.a.date)||0));
+  let streak=0;
+  todayAnswers.forEach(({qid,a})=>{
+    const q=findQuestionById(qid);
+    if(q && Number(a.ans)===Number(q.ans)) streak++;
+    else streak=0;
+  });
+  return streak;
+}
+
 function getMissionProgress(mission, u){
   const today=new Date(); today.setHours(0,0,0,0);
   const todayMs=today.getTime();
   const tomorrowMs=todayMs+86400000;
-  const todayAnswers=Object.entries(u.answers||{})
-    .filter(([,a])=>a.date>=todayMs&&a.date<tomorrowMs);
+  const todayAnswers=getTodayAnswerEntries(u);
 
   if(mission.type==='solve'){
     return {cur:todayAnswers.length, target:mission.target};
   }
   if(mission.type==='streak'){
-    return {cur:Math.min(u.streak||0, mission.target), target:mission.target};
+    return {cur:Math.min(getTodayCorrectStreak(u), mission.target), target:mission.target};
   }
   if(mission.type==='field'){
     const cur=todayAnswers.filter(([qid])=>{
