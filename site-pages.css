@@ -1193,7 +1193,9 @@ a.site-page-brand:hover {
   border: 1px solid var(--border2);
   border-radius: var(--r2);
   padding: 20px;
-  margin-top: 32px;
+  width: 100%;
+  max-width: 860px;
+  margin: 32px auto 0;
 }
 .related-box-title {
   font-size: 13px;
