@@ -473,7 +473,7 @@ def build_index_html(articles: list[dict[str, str]]) -> str:
     )
     canonical = public_url("articles/index.html")
     title = f"試験ガイド｜{brand_name()}（{exam_name()}）"
-    desc = f"{exam_name()}の試験概要、試験対策、過去問活用、用語整理に関するSEO記事テンプレートです。"
+    desc = f"{exam_name()}の試験概要、受験対策、過去問の活用法、分野別の学習記事をまとめた試験ガイドです。"
     item_list = [
         {"@type": "ListItem", "position": i, "name": apply_vars(a["title"]), "item": public_url(f"articles/{a['slug']}/")}
         for i, a in enumerate(articles, start=1)
@@ -535,10 +535,6 @@ def build_index_html(articles: list[dict[str, str]]) -> str:
       {"".join(article_cards)}
     </div>
     <p id="article-index-empty" class="article-index-empty hide">条件に合う記事がありません。検索語を短くするか、ジャンルを「すべて」に戻してください。</p>
-  </section>
-  <section class="site-page-section" aria-labelledby="sec-template-note">
-    <h2 id="sec-template-note">共通テンプレの増やし方</h2>
-    <p>試験概要、受験資格、日程・申込、合格率・難易度、出題範囲、独学対策、過去問活用、直前対策、当日の持ち物、合格後の手続きなどをジャンルとして追加できます。</p>
   </section>
 </main>
 {site_page_footer(rel_path, current="articles")}
