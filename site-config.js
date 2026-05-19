@@ -1,6 +1,7 @@
 window.SITE_CONFIG = {
   "brandName": "2級ボイラー技士マスター",
-  "brandMark": "B",
+  "brandLogoText": "2級ボイラー",
+  "brandMark": "2",
   "examName": "2級ボイラー技士試験",
   "siteOrigin": "https://boiler-master.jp",
   "contactUrl": "https://boiler-master.jp/contact",

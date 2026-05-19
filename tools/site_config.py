@@ -36,6 +36,10 @@ def brand_mark() -> str:
     return str(CONFIG.get("brandMark") or brand_name()[:1] or "S")
 
 
+def brand_logo_text() -> str:
+    return str(CONFIG.get("brandLogoText") or brand_name())
+
+
 def exam_name() -> str:
     return str(CONFIG.get("examName") or "◯◯試験")
 
@@ -240,6 +244,7 @@ def public_url(rel_path: str) -> str:
 def write_site_config_js() -> None:
     payload = {
         "brandName": brand_name(),
+        "brandLogoText": brand_logo_text(),
         "brandMark": brand_mark(),
         "examName": exam_name(),
         "siteOrigin": clean_origin(),

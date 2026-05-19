@@ -15,6 +15,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from tools.site_config import (
+    brand_logo_text,
     brand_mark,
     brand_name,
     category_to_field_map,
@@ -154,9 +155,25 @@ def ensure_index_theme(text: str) -> str:
 
 def update_index_brand_mark(text: str) -> str:
     mark = html.escape(brand_mark())
+    logo = html.escape(brand_logo_text())
+    exam = html.escape(exam_name())
     text = re.sub(
         r'(<div class="topnav-logo-mark"[^>]*>)(.*?)(</div>)',
         rf"\1{mark}\3",
+        text,
+        count=1,
+        flags=re.S,
+    )
+    text = re.sub(
+        r'(<span class="topnav-logo-text">)(.*?)(</span>)',
+        rf"\1{logo}\3",
+        text,
+        count=1,
+        flags=re.S,
+    )
+    text = re.sub(
+        r'(<a class="topnav-logo"[^>]*aria-label=")(.*?)(")',
+        rf"\1{logo}、{exam}対策のトップへ\3",
         text,
         count=1,
         flags=re.S,
