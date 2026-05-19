@@ -2769,14 +2769,13 @@ function getTodayCorrectStreak(u){
     .map(([qid,a])=>({qid,a,t:Number(a.date)||0}))
     .sort((x,y)=>x.t-y.t);
   let cur=0;
-  let best=0;
   ordered.forEach(({qid,a})=>{
     const q=findQuestionById(qid);
     const ok=q && Number(a.ans)===Number(q.ans);
     cur=ok ? cur+1 : 0;
-    if(cur>best) best=cur;
   });
-  return best;
+  // 直近の連続正解数（途中で切れたらリセット）。当日の最大値だと未達成でも達成表示になる。
+  return cur;
 }
 
 function recordReviewMissionAction(u){
@@ -4176,6 +4175,7 @@ function shareIchiResultToX(){
 
 function gotoPage(id){
   if(id==='ichimondou') syncIchiPageVisibility();
+  if(id!=='quiz' && id!=='score' && quizState) quizState.fromReview=false;
   if(id!=='quiz') showNextBtn(false, null);
   document.body.classList.toggle('is-solving', id==='quiz' || (id==='ichimondou' && ichiState.active));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -4653,6 +4653,7 @@ function beginOrigQuiz(){
   const ordered = shuffleArray(pool.slice());
   quizState.queue=origState.count===0?ordered:ordered.slice(0,origState.count);
   quizState.idx=0;quizState.sessionResults=[];quizState.scoreReplayMode=false;
+  quizState.fromReview=false;
   quizState.mode='orig';
   gotoPage('quiz'); renderQ();
 }
@@ -4852,6 +4853,7 @@ function beginQuiz(){
   const ordered = quizState.order==='rnd' ? [...pool].sort(()=>Math.random()-.5) : [...pool];
   quizState.queue=quizState.count===0?ordered:ordered.slice(0,quizState.count);
   quizState.idx=0;quizState.sessionResults=[];quizState.scoreReplayMode=false;
+  quizState.fromReview=false;
   quizState.mode='past';
   gotoPage('quiz'); renderQ();
 }
