@@ -31,6 +31,7 @@ from tools.html_footer import (
     static_footer_block,
     static_site_header,
 )
+from tools.internal_links import past_question_link_sections
 from tools.site_config import brand_name, clean_origin, exam_name
 
 DATA_CSV = ROOT / "data" / "past_questions.csv"
@@ -152,7 +153,7 @@ def page_dict(row: dict, line_no: int) -> dict:
     }
 
 
-def build_question_html(page: dict, rel_path: Path, base_url: str) -> str:
+def build_question_html(page: dict, rel_path: Path, base_url: str, pages: list[dict]) -> str:
     title_mid = f"{page['wareki']} 第{page['qno']}問・{page['category']}"
     title = f"{title_mid}｜{brand_name()}（{exam_name()}）"
     desc = meta_description(page["stem_plain"] or page["category"])
@@ -215,6 +216,7 @@ def build_question_html(page: dict, rel_path: Path, base_url: str) -> str:
         [("トップ", "index.html"), ("過去問一覧", "q/index.html"), (title_mid, None)],
     )
     site_footer = site_page_footer(rel_path, current="q")
+    internal_links = past_question_link_sections(page, pages, rel_path)
 
     return f"""<!DOCTYPE html>
 <html lang="ja">
@@ -262,6 +264,7 @@ def build_question_html(page: dict, rel_path: Path, base_url: str) -> str:
     <h2 id="q-exp-h" class="q-h2">解説</h2>
     <div class="q-exp">{exp_html}</div>
   </section>
+  {internal_links}
   <p class="q-app-link"><a href="{html.escape(root_idx)}">アプリで演習する</a></p>
 </main>
 {site_footer}
@@ -397,7 +400,7 @@ def main() -> int:
         rel = Path(p["rel_path"])
         out_file = ROOT / rel
         out_file.parent.mkdir(parents=True, exist_ok=True)
-        html_out = build_question_html(p, out_file.relative_to(ROOT), base)
+        html_out = build_question_html(p, out_file.relative_to(ROOT), base, pages)
         out_file.write_text(html_out, encoding="utf-8")
 
     q_index = ROOT / "q" / "index.html"

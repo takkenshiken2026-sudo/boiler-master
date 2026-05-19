@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from tools.internal_links import term_page_link_sections
 from tools.html_footer import (
     ROBOTS_INDEX_FOLLOW,
     breadcrumb_html,
@@ -574,6 +575,7 @@ def build_term_html(entry: dict, rel_path: Path, base_url: str, term_lookup: dic
             content_sections.append(html_text)
     content_sections_html = "\n    ".join(content_sections)
 
+    hub_links = term_page_link_sections(entry, rel_path)
     next_links = (
         '<div class="related-box" aria-labelledby="term-next-title"><div id="term-next-title" class="related-box-title">次に確認するページ</div>'
         '<div class="related-links">'
@@ -676,6 +678,7 @@ def build_term_html(entry: dict, rel_path: Path, base_url: str, term_lookup: dic
     {info_table}
     {official_html}
     {rel_section}
+    {hub_links}
     {next_links}
   </article>
 </main>

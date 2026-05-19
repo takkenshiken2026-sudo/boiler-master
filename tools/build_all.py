@@ -19,6 +19,7 @@ def run(cmd: list[str]) -> None:
 def main() -> int:
     py = sys.executable
     run([py, "tools/validate_csv.py"])
+    run([py, "tools/apply_seo_growth.py"])
     run([py, "tools/apply_site_config.py"])
     run([py, "tools/csv_to_exam_site_master.py"])
     run([py, "tools/glossary_csv_to_eisei_embed_js.py"])

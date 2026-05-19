@@ -25,6 +25,7 @@ from tools.html_footer import (  # noqa: E402
     site_page_wrap_close,
     site_page_wrap_open,
 )
+from tools.internal_links import article_link_sections  # noqa: E402
 from tools.site_config import (  # noqa: E402
     brand_name,
     clean_origin,
@@ -285,6 +286,7 @@ def build_article_html(article: dict[str, str], by_slug: dict[str, dict[str, str
     faq_section = faq_html(faqs)
     toc = toc_html(article, bool(faqs))
     related = parse_related_links(article.get("related_links", ""), by_slug)
+    hub_links = article_link_sections(article, rel_path)
     quality_panel = quality_panel_html(article)
     action_box = action_box_html(article)
     author = apply_vars(article.get("author_name", ""))
@@ -386,6 +388,7 @@ def build_article_html(article: dict[str, str], by_slug: dict[str, dict[str, str
     {info_table}
     {official_box}
     {related}
+    {hub_links}
   </article>
 </main>
 {site_page_footer(rel_path, current="articles")}
