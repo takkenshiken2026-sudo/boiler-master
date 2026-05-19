@@ -159,28 +159,28 @@ def update_index_brand_mark(text: str) -> str:
     exam = html.escape(exam_name())
     text = re.sub(
         r'(<div class="topnav-logo-mark"[^>]*>)(.*?)(</div>)',
-        rf"\1{mark}\3",
+        lambda m: f"{m.group(1)}{mark}{m.group(3)}",
         text,
         count=1,
         flags=re.S,
     )
     text = re.sub(
         r'(<span class="topnav-logo-text">)(.*?)(</span>)',
-        rf"\1{logo}\3",
+        lambda m: f"{m.group(1)}{logo}{m.group(3)}",
         text,
         count=1,
         flags=re.S,
     )
     text = re.sub(
         r'(<a class="topnav-logo"[^>]*aria-label=")(.*?)(")',
-        rf"\1{logo}、{exam}対策のトップへ\3",
+        lambda m: f"{m.group(1)}{logo}、{exam}対策のトップへ{m.group(3)}",
         text,
         count=1,
         flags=re.S,
     )
     text = re.sub(
         r'(<span class="site-footer-logo-mark"[^>]*>)(.*?)(</span>)',
-        rf"\1{mark}\3",
+        lambda m: f"{m.group(1)}{mark}{m.group(3)}",
         text,
         count=1,
         flags=re.S,
