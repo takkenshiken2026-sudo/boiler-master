@@ -2766,87 +2766,110 @@ function isTimestampToday(ts){
   return localDateKey(new Date(n))===localDateKey();
 }
 
-/** 今日のミッション用カウンター（解答履歴の再集計で誤達成しないよう、当日の操作だけを加算） */
+/** ミッション進捗の保存形式（旧カウンターは version 不一致で破棄） */
+const MISSION_STATE_VERSION=4;
+const MISSION_EVENT_CAP=250;
+
+function emptyDailyMissionState(dateKey){
+  return {version:MISSION_STATE_VERSION,dateKey,events:[]};
+}
+
+/** 当日の操作だけをイベント列に記録し、表示時に再計算する */
 function ensureDailyMissionState(u){
   if(!u) return null;
   const dateKey=localDateKey();
-  if(!u.dailyMissionState||u.dailyMissionState.dateKey!==dateKey){
-    u.dailyMissionState={
-      dateKey,
-      solve:0,
-      review:0,
-      fields:{},
-      modes:{past:0,orig:0},
-      sessionsCompleted:0,
-      answerResults:[],
-    };
+  const st=u.dailyMissionState;
+  if(!st||st.dateKey!==dateKey||st.version!==MISSION_STATE_VERSION||!Array.isArray(st.events)){
+    u.dailyMissionState=emptyDailyMissionState(dateKey);
+  }else if(st.events.length>MISSION_EVENT_CAP){
+    st.events=st.events.slice(-MISSION_EVENT_CAP);
   }
   return u.dailyMissionState;
 }
 
-function getTodayCorrectStreak(u){
-  const st=ensureDailyMissionState(u);
-  if(!st||!Array.isArray(st.answerResults)) return 0;
-  let cur=0;
-  st.answerResults.forEach(ok=>{ cur=ok ? cur+1 : 0; });
-  return cur;
+function migrateDailyMissionState(u){
+  if(!u) return;
+  const prev=u.dailyMissionState;
+  ensureDailyMissionState(u);
+  if(prev&&prev!==u.dailyMissionState&&typeof saveUser==='function') saveUser(u);
 }
 
-function recordMissionOnAnswer(u,q,correct){
-  if(!u||!q) return;
+function pushMissionEvent(u,evt){
   const st=ensureDailyMissionState(u);
-  st.solve+=1;
-  if(q.field) st.fields[q.field]=(st.fields[q.field]||0)+1;
-  if(isAnyOrigQuestion(q)) st.modes.orig=(st.modes.orig||0)+1;
-  else if(q.year!=null&&q.year!=='') st.modes.past=(st.modes.past||0)+1;
-  st.answerResults.push(!!correct);
-  if(st.answerResults.length>120) st.answerResults=st.answerResults.slice(-120);
+  st.events.push(Object.assign({t:Date.now()},evt));
+  if(st.events.length>MISSION_EVENT_CAP) st.events=st.events.slice(-MISSION_EVENT_CAP);
+}
+
+function computeMissionStats(st){
+  const stats={solve:0,review:0,fields:{},modes:{past:0,orig:0},sessionsCompleted:0,currentStreak:0};
+  if(!st||!Array.isArray(st.events)) return stats;
+  st.events.forEach(e=>{
+    if(e.kind==='answer'){
+      stats.solve+=1;
+      if(e.field) stats.fields[e.field]=(stats.fields[e.field]||0)+1;
+      if(e.mode==='orig') stats.modes.orig+=1;
+      else if(e.mode==='past') stats.modes.past+=1;
+      if(e.correct){ stats.currentStreak+=1; }
+      else{ stats.currentStreak=0; }
+    }else if(e.kind==='review'){
+      stats.review+=1;
+    }else if(e.kind==='session'){
+      stats.sessionsCompleted+=1;
+    }
+  });
+  return stats;
+}
+
+function missionAnswerMode(q,fromReview){
+  if(fromReview) return null;
+  if(isAnyOrigQuestion(q)) return 'orig';
+  if(q.year!=null&&q.year!=='') return 'past';
+  return null;
+}
+
+function recordMissionOnAnswer(u,q,correct,fromReview){
+  if(!u||!q) return;
+  pushMissionEvent(u,{
+    kind:'answer',
+    correct:!!correct,
+    field:q.field||null,
+    mode:missionAnswerMode(q,!!fromReview),
+    fromReview:!!fromReview,
+  });
 }
 
 function recordReviewMissionAction(u){
   if(!u) return;
-  u.reviewActions=Array.isArray(u.reviewActions)?u.reviewActions:[];
-  u.reviewActions.push(Date.now());
-  u.reviewActions=u.reviewActions.filter(t=>Number(t)>0).slice(-200);
-  const st=ensureDailyMissionState(u);
-  st.review+=1;
+  pushMissionEvent(u,{kind:'review'});
 }
 
-function recordMissionSessionComplete(u,mode,total){
-  if(!u) return;
+function recordMissionSessionComplete(u,mode,total,fromReview){
+  if(!u||fromReview) return;
   if(!['past','orig'].includes(mode)) return;
-  const minTotal=3;
-  if((total||0)<minTotal) return;
-  const st=ensureDailyMissionState(u);
-  st.sessionsCompleted+=1;
+  if((total||0)<3) return;
+  pushMissionEvent(u,{kind:'session',mode});
 }
 
 function getMissionProgress(mission, u){
   const st=ensureDailyMissionState(u);
-  const target=mission.target||0;
-  if(!st) return {cur:0, target};
+  const target=Math.max(1,Number(mission.target)||0);
+  if(!st) return {cur:0,target};
 
-  if(mission.type==='solve'){
-    return {cur:Math.min(st.solve, target), target};
-  }
-  if(mission.type==='streak'){
-    return {cur:Math.min(getTodayCorrectStreak(u), target), target};
-  }
-  if(mission.type==='field'){
-    const cur=st.fields[mission.field]||0;
-    return {cur:Math.min(cur, target), target};
-  }
-  if(mission.type==='mode'){
-    const cur=(st.modes&&st.modes[mission.mode])||0;
-    return {cur:Math.min(cur, target), target};
-  }
-  if(mission.type==='session_done'){
-    return {cur:Math.min(st.sessionsCompleted, target), target};
-  }
-  if(mission.type==='review'){
-    return {cur:Math.min(st.review, target), target};
-  }
-  return {cur:0, target};
+  const s=computeMissionStats(st);
+  let cur=0;
+  if(mission.type==='solve') cur=s.solve;
+  else if(mission.type==='streak') cur=s.currentStreak;
+  else if(mission.type==='field') cur=s.fields[mission.field]||0;
+  else if(mission.type==='mode') cur=s.modes[mission.mode]||0;
+  else if(mission.type==='session_done') cur=s.sessionsCompleted;
+  else if(mission.type==='review') cur=s.review;
+
+  return {cur:Math.min(cur,target),target};
+}
+
+function isMissionComplete(mission,u){
+  const p=getMissionProgress(mission,u);
+  return p.target>0&&p.cur>=p.target;
 }
 
 function renderDailyStatus(){
@@ -2882,7 +2905,7 @@ function renderDailyStatus(){
   // Missions
   const mHTML=missions.map(m=>{
     const prog=getMissionProgress(m,u);
-    const done=prog.cur>=prog.target;
+    const done=isMissionComplete(m,u);
     return `<div class="mission-item">
       <div class="mission-check${done?' done':''}"></div>
       <div class="mission-text${done?' done':''}">${m.text}</div>
@@ -3125,6 +3148,7 @@ function normalizeUserData(u){
     if(cell.text) sdClean[k]={text:cell.text,updatedAt:cell.updatedAt||0};
   });
   u.studyDiary=sdClean;
+  if(u.dailyMissionState&&u.dailyMissionState.version!==MISSION_STATE_VERSION) delete u.dailyMissionState;
   return u;
 }
 function normalizeStudyDiaryCell(v){
@@ -3508,7 +3532,7 @@ function openLoginModal(){ if(!_sb){ alert('ログイン機能を使うには Su
 function closeLoginModal(){
   document.getElementById('login-modal').style.display='none';
 }
-	function resetData(){ const u=getUserData();u.answers={};u.sessions=[];u.bookmarks={};u.bookmarkNotes={};u.streak=0;u.bestStreak=0;saveUser(u);gotoPage('quiz-start'); }
+	function resetData(){ const u=getUserData();u.answers={};u.sessions=[];u.bookmarks={};u.bookmarkNotes={};u.streak=0;u.bestStreak=0;delete u.dailyMissionState;saveUser(u);gotoPage('quiz-start'); }
 
 function enterApp(){
   document.getElementById('auth-screen').style.display='none';
@@ -3520,6 +3544,7 @@ function enterApp(){
   if(loginBtn) loginBtn.style.display = isGuest ? '' : 'none';
   if(logoutBtn) logoutBtn.style.display = isGuest ? 'none' : '';
   const u=getUserData();
+  migrateDailyMissionState(u);
   syncBestStreakFromHistory(u);
   updateDayStreak(u);
   saveUser(u);
@@ -4244,7 +4269,7 @@ function gotoPage(id){
   if(id==='orig')        renderOrigPage();
   if(id==='quiz-start')  {
     const u=getUserData();
-    if(u){ ensureDailyMissionState(u); saveUser(u); }
+    if(u){ migrateDailyMissionState(u); }
     renderDailyStatus();
   }
   if(id==='mock')        renderMockPage();
@@ -5129,7 +5154,7 @@ function pickOpt(i){
   const elapsed=(Date.now()-quizState.startTime)/1000, correct=i===q.ans;
   const u=getUserData();
   u.answers[q.id]={ans:i,time:elapsed,date:Date.now()};
-  recordMissionOnAnswer(u,q,correct);
+  recordMissionOnAnswer(u,q,correct,quizState.fromReview);
   if(quizState.fromReview) recordReviewMissionAction(u);
   if(correct){
     u.streak=(u.streak||0)+1;
@@ -5275,10 +5300,7 @@ function missionsAllCompleteNow(){
   const u=getUserData();
   if(!u) return false;
   const missions=getTodayMissions();
-  return missions.every(m=>{
-    const p=getMissionProgress(m,u);
-    return p.cur>=p.target;
-  });
+  return missions.every(m=>isMissionComplete(m,u));
 }
 function syncMissionPopupBaseline(){
   _missionWasAllDone=missionsAllCompleteNow();
@@ -5287,10 +5309,7 @@ function syncMissionPopupBaseline(){
 function checkMissionAllComplete(){
   const u = getUserData(); if(!u) return;
   const missions = getTodayMissions();
-  const allDone = missions.every(m => {
-    const p = getMissionProgress(m, u);
-    return p.cur >= p.target;
-  });
+  const allDone = missions.every(m => isMissionComplete(m, u));
   if(allDone && !_missionWasAllDone){
     showMissionPopup();
     _missionWasAllDone = true;
@@ -6245,7 +6264,7 @@ function showScore(){
   const pct=Math.round(correct/res.length*100);
   lastSessionShareData={mode:quizState.mode,correct,total:res.length,pct};
   const u=getUserData();
-  recordMissionSessionComplete(u, quizState.mode, res.length);
+  recordMissionSessionComplete(u, quizState.mode, res.length, quizState.fromReview);
   u.sessions=u.sessions||[];u.sessions.push({date:Date.now(),correct,total:res.length,pct,mode:quizState.mode});saveUser(u);
   // session-end badge check
   const sessionNewBadges=checkAndAwardBadges({correct,sessionResults:res,u});
