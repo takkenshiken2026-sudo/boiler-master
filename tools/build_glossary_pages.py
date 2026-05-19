@@ -37,7 +37,9 @@ from tools.site_config import (
     clean_origin,
     css_safe_field_id,
     exam_name,
+    external_links,
     field_labels,
+    primary_external_link,
 )
 
 HEAD_FONTS = """<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -289,12 +291,29 @@ def faq_section_html(items: list[dict[str, str]]) -> str:
     body = []
     for item in items:
         body.append(
-            '<details class="term-faq-item">'
+            '<details class="term-faq-item" open>'
             f'<summary>{html.escape(item["question"])}</summary>'
             f'<div>{html.escape(item["answer"])}</div>'
             "</details>"
         )
     return "".join(body)
+
+
+def custom_faq_items(entry: dict, fallback: list[dict[str, str]]) -> list[dict[str, str]]:
+    items: list[dict[str, str]] = []
+    for idx in range(1, 4):
+        q = norm(entry.get(f"faq_{idx}_question"))
+        a = norm(entry.get(f"faq_{idx}_answer"))
+        if q and a:
+            items.append({"question": q, "answer": a})
+    return items or fallback
+
+
+def semicolon_list_html(value: str) -> str:
+    items = split_semicolon(value)
+    if not items:
+        return ""
+    return '<ol class="term-point-list">' + "".join(f"<li>{html.escape(item)}</li>" for item in items) + "</ol>"
 
 
 def write_sitemap(urls: list[str], out: Path) -> None:
@@ -320,9 +339,9 @@ def collect_sitemap_urls(base: str) -> list[str]:
         f"{base}/articles/index.html",
         f"{base}/q/index.html",
     ]
-    articles_dir = ROOT / "articles"
-    if articles_dir.is_dir():
-        for p in sorted(articles_dir.glob("*.html")):
+    articles_root = ROOT / "articles"
+    if articles_root.is_dir():
+        for p in sorted(articles_root.rglob("index.html")):
             rel = p.relative_to(ROOT).as_posix()
             urls.append(f"{base}/{rel}")
     qroot = ROOT / "q"
@@ -350,8 +369,16 @@ def build_term_html(entry: dict, rel_path: Path, base_url: str, term_lookup: dic
     importance = entry["importance"]
     explanation = entry["explanation"]
     slug_file = entry["slug_file"]
+    article_title = norm(entry.get("article_title"))
+    article_lead = norm(entry.get("article_lead"))
+    term_detail_body = norm(entry.get("term_detail_body"))
+    exam_points = norm(entry.get("exam_points"))
+    common_mistakes = norm(entry.get("common_mistakes"))
+    memory_tip = norm(entry.get("memory_tip"))
+    example_question = norm(entry.get("example_question"))
+    example_answer = norm(entry.get("example_answer"))
 
-    title = f"{term}とは？意味・根拠・試験ポイント｜{brand_name()}"
+    title = f"{article_title or term + 'とは？意味・根拠・試験ポイント'}｜{brand_name()}"
     desc = meta_description(
         f"{term}（{reading}）の意味、法令・根拠、試験で押さえるポイントを{exam_name()}向けに整理。{short_def or definition}"
     )
@@ -371,17 +398,23 @@ def build_term_html(entry: dict, rel_path: Path, base_url: str, term_lookup: dic
             paras = [body.strip()]
         return "\n".join(f"<p>{html.escape(p).replace(chr(10), '<br>')}</p>" for p in paras)
 
-    def article_section(sec_id: str, label: str, body_html: str) -> str:
+    def article_section(sec_id: str, label: str, body_html: str, number: int | None = None) -> str:
         if not body_html.strip():
             return ""
         hid = f"term-sec-{sec_id}"
+        num_html = f'<span class="section-heading-num">{number}</span>' if number is not None else ""
+        section_class = "seo-article-section term-definition-section" if sec_id == "definition" else "seo-article-section"
         return (
-            f'<section class="seo-article-section" aria-labelledby="{hid}">'
-            f'<h2 id="{hid}">{html.escape(label)}</h2>'
+            f'<section class="{section_class}" aria-labelledby="{hid}">'
+            f'<h2 id="{hid}">{num_html}{html.escape(label)}</h2>'
             f"{body_html}</section>"
         )
 
-    info_rows: list[tuple[str, str]] = []
+    info_rows: list[tuple[str, str]] = [
+        ("対象試験", exam_name()),
+        ("記事種別", "用語詳細記事"),
+        ("検索意図", f"{term}の意味、試験で問われる観点、復習時の確認ポイントを整理すること。"),
+    ]
     if category:
         info_rows.append(("分野", category))
     if importance:
@@ -393,18 +426,20 @@ def build_term_html(entry: dict, rel_path: Path, base_url: str, term_lookup: dic
     info_table = ""
     if info_rows:
         info_table = (
+            '<section class="seo-article-section" aria-labelledby="article-info-title">'
+            '<h2 id="article-info-title">記事の基本情報</h2>'
             '<table class="seo-info-table"><tbody>'
             + "".join(
                 f"<tr><th>{html.escape(k)}</th><td>{html.escape(v)}</td></tr>"
                 for k, v in info_rows
             )
-            + "</tbody></table>"
+            + "</tbody></table></section>"
         )
 
     rel_section = ""
     if rel_html:
         rel_section = (
-            '<div class="related-box"><div class="related-box-title">関連用語</div>'
+            '<div class="related-box" aria-labelledby="term-related-title"><div id="term-related-title" class="related-box-title">関連用語</div>'
             f'<div class="related-links term-related-links">{rel_html}</div></div>'
         )
 
@@ -414,9 +449,21 @@ def build_term_html(entry: dict, rel_path: Path, base_url: str, term_lookup: dic
     )
     points = study_points(explanation)
     points_html = ""
-    if points:
+    if exam_points:
+        points_html = semicolon_list_html(exam_points)
+    elif points:
         points_html = '<ol class="term-point-list">' + "".join(f"<li>{html.escape(p)}</li>" for p in points) + "</ol>"
-    faq_items = faq_items_for_term(term, reading, short_def, definition, explanation)
+    detail_html = text_paragraphs(term_detail_body or definition)
+    mistakes_html = text_paragraphs(common_mistakes)
+    memory_html = f"<blockquote><p>{html.escape(memory_tip)}</p></blockquote>" if memory_tip else ""
+    example_html = ""
+    if example_question or example_answer:
+        example_html = (
+            '<div class="related-box"><div class="related-box-title">例題</div>'
+            f"<p><strong>問題：</strong>{html.escape(example_question)}</p>"
+            f"<p><strong>答え：</strong>{html.escape(example_answer)}</p></div>"
+        )
+    faq_items = custom_faq_items(entry, faq_items_for_term(term, reading, short_def, definition, explanation))
     faq_html = faq_section_html(faq_items)
 
     badge_html = glossary_field_badge_html(category)
@@ -439,15 +486,96 @@ def build_term_html(entry: dict, rel_path: Path, base_url: str, term_lookup: dic
     app_glossary_href = f"{root_idx}#glossary"
     updated = date.today().isoformat()
 
-    note_html = (
+    quality_html = (
+        '<section class="seo-quality-panel" aria-labelledby="quality-panel-title">'
+        '<h2 id="quality-panel-title">この記事の信頼性について</h2>'
+        '<table class="seo-info-table"><tbody>'
+        f"<tr><th>執筆</th><td>{html.escape(brand_name())}編集部（学習用語、過去問の復習導線、試験ガイドを整理する編集チーム）</td></tr>"
+        f"<tr><th>確認</th><td>{html.escape(brand_name())}編集部（公開前に公式情報、法令情報、サイト内の関連ページとの整合性を確認）</td></tr>"
+        f"<tr><th>事実確認日</th><td>{html.escape(updated)}</td></tr>"
+    )
+
+    official_links = external_links() or [primary_external_link()]
+    quality_source_items = "".join(
+        f'<li><a href="{html.escape(link["url"])}" target="_blank" rel="noopener noreferrer">{html.escape(link["label"])}</a></li>'
+        for link in official_links
+    )
+    quality_html += f'<tr><th>主な参照元</th><td><ul class="quality-source-list">{quality_source_items}</ul></td></tr></tbody></table></section>'
+    official_items = "".join(
+        f'<li><a href="{html.escape(link["url"])}" target="_blank" rel="noopener noreferrer">{html.escape(link["label"])}</a>'
+        + (f' … {html.escape(link.get("description", ""))}' if link.get("description") else "")
+        + "</li>"
+        for link in official_links
+    )
+    official_html = (
+        '<section class="seo-article-section" aria-labelledby="official-info-title">'
+        '<h2 id="official-info-title">公式情報の確認</h2>'
+        f"<p>{html.escape(term)}は、{html.escape(exam_name())}の学習で押さえたい用語です。制度、数値、義務の有無は年度や法令改正で変わることがあるため、受験前には公式情報も確認してください。</p>"
+        f"<ul>{official_items}</ul>"
         "<blockquote><p><strong>注意：</strong>"
         "本ページは学習用の要点整理です。出題範囲・法令・公式見解は変更される場合があります。"
         "本番前には必ず試験実施団体や法令原文などの公式情報を確認してください。"
-        "</p></blockquote>"
+        "</p></blockquote></section>"
     )
 
+    can_do_html = (
+        '<section class="seo-action-box" aria-labelledby="action-box-title">'
+        '<h2 id="action-box-title">この記事でできること</h2>'
+        f"<p>この記事では、{html.escape(term)}の基本的な意味を確認し、頻出ポイントや注意点を使って試験で迷いやすい部分を整理できます。読み終えたら、関連用語と過去問を合わせて確認し、知識を選択肢で使える状態に近づけてください。</p>"
+        '<ul>'
+        f"<li>{html.escape(term)}の定義と位置づけを確認する</li>"
+        "<li>試験で問われやすい条件や表現を整理する</li>"
+        "<li>頻出の誤り選択肢や混同しやすい点を復習する</li>"
+        "<li>関連する用語解説や過去問へ進む</li>"
+        "</ul></section>"
+    )
+
+    toc_items: list[tuple[str, str]] = [
+        ("quality-panel-title", "この記事の信頼性について"),
+        ("action-box-title", "この記事でできること"),
+        ("term-sec-summary", "まず押さえる要点"),
+        ("term-sec-points", "試験で押さえるポイント"),
+        ("term-sec-definition", "定義と基本理解"),
+        ("term-sec-legal", "法令・根拠"),
+        ("term-sec-exam", "選択肢で問われやすい点"),
+    ]
+    if mistakes_html:
+        toc_items.append(("term-sec-mistakes", "よくある誤解・注意点"))
+    if memory_html:
+        toc_items.append(("term-sec-memory", "覚え方・整理のコツ"))
+    if example_html:
+        toc_items.append(("term-sec-example", "例題で確認"))
+    toc_items.append(("term-sec-faq", "よくある質問"))
+    toc_items.append(("article-info-title", "記事の基本情報"))
+    toc_items.append(("official-info-title", "公式情報の確認"))
+    if rel_section:
+        toc_items.append(("term-related-title", "関連用語"))
+    toc_items.append(("term-next-title", "次に確認するページ"))
+    toc_links = "".join(f'<li><a href="#{html.escape(anchor)}">{html.escape(label)}</a></li>' for anchor, label in toc_items)
+    toc_html = (
+        '<nav class="seo-toc" aria-labelledby="seo-toc-title">'
+        '<h2 id="seo-toc-title">目次</h2>'
+        f"<ol>{toc_links}</ol></nav>"
+    )
+
+    content_sections: list[str] = []
+    for sec_id, label, body_html in [
+        ("summary", "まず押さえる要点", text_paragraphs(short_def)),
+        ("points", "試験で押さえるポイント", points_html),
+        ("definition", "定義と基本理解", detail_html),
+        ("legal", "法令・根拠", legal_basis_html(legal)),
+        ("exam", "選択肢で問われやすい点", text_paragraphs(explanation)),
+        ("mistakes", "よくある誤解・注意点", mistakes_html),
+        ("memory", "覚え方・整理のコツ", memory_html),
+        ("example", "例題で確認", example_html),
+    ]:
+        html_text = article_section(sec_id, label, body_html, len(content_sections) + 1)
+        if html_text:
+            content_sections.append(html_text)
+    content_sections_html = "\n    ".join(content_sections)
+
     next_links = (
-        '<div class="related-box"><div class="related-box-title">次に確認するページ</div>'
+        '<div class="related-box" aria-labelledby="term-next-title"><div id="term-next-title" class="related-box-title">次に確認するページ</div>'
         '<div class="related-links">'
         '<a class="related-link" href="index.html">用語解説一覧へ戻る</a>'
         f'<a class="related-link" href="{html.escape(root_idx)}#glossary">アプリ内の用語解説を開く</a>'
@@ -538,15 +666,15 @@ def build_term_html(entry: dict, rel_path: Path, base_url: str, term_lookup: dic
       <span class="meta-updated">更新日：{html.escape(updated)}</span>
       <span class="meta-updated">{meta_line}</span>
     </div>
-    <h1 class="article-title">{html.escape(term)}とは？意味・根拠・試験ポイントを整理</h1>
-    <p class="article-lead"><strong>{html.escape(term)}</strong>{f"（{html.escape(reading)}）" if reading else ""}について、定義・根拠・試験での押さえ方をまとめます。{html.escape(lead)}</p>
-    {note_html}
-    {article_section("summary", "まず押さえる要点", text_paragraphs(short_def) + info_table)}
-    {article_section("points", "試験で押さえるポイント", points_html)}
-    {article_section("definition", "定義と基本理解", text_paragraphs(definition))}
-    {article_section("legal", "法令・根拠", legal_basis_html(legal))}
-    {article_section("exam", "選択肢で問われやすい点", text_paragraphs(explanation))}
-    {article_section("faq", "よくある確認ポイント", faq_html)}
+    <h1 class="article-title">{html.escape(article_title or term + 'とは？意味・根拠・試験ポイントを整理')}</h1>
+    <p class="article-lead"><strong>{html.escape(term)}</strong>{f"（{html.escape(reading)}）" if reading else ""}について、定義・根拠・試験での押さえ方をまとめます。{html.escape(article_lead or lead)}</p>
+    {toc_html}
+    {quality_html}
+    {can_do_html}
+    {content_sections_html}
+    {article_section("faq", "よくある質問", faq_html)}
+    {info_table}
+    {official_html}
     {rel_section}
     {next_links}
   </article>
@@ -778,6 +906,20 @@ def main() -> int:
                 "legal_basis": norm(row.get("legal_basis")),
                 "importance": norm(row.get("importance")),
                 "explanation": norm(row.get("explanation")),
+                "article_title": norm(row.get("article_title")),
+                "article_lead": norm(row.get("article_lead")),
+                "term_detail_body": norm(row.get("term_detail_body")),
+                "exam_points": norm(row.get("exam_points")),
+                "common_mistakes": norm(row.get("common_mistakes")),
+                "memory_tip": norm(row.get("memory_tip")),
+                "example_question": norm(row.get("example_question")),
+                "example_answer": norm(row.get("example_answer")),
+                "faq_1_question": norm(row.get("faq_1_question")),
+                "faq_1_answer": norm(row.get("faq_1_answer")),
+                "faq_2_question": norm(row.get("faq_2_question")),
+                "faq_2_answer": norm(row.get("faq_2_answer")),
+                "faq_3_question": norm(row.get("faq_3_question")),
+                "faq_3_answer": norm(row.get("faq_3_answer")),
                 "slug_file": slug_file,
             }
         )

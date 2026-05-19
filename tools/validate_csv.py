@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import csv
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -235,12 +236,80 @@ class Validator:
             importance = self.norm(row.get("importance"))
             if importance and importance not in {"A", "B", "C", "S"}:
                 self.warn(path, idx, f"importance は A/B/C/S のいずれかを推奨します: {importance}")
+            for col in (
+                "article_title",
+                "article_lead",
+                "term_detail_body",
+                "exam_points",
+                "common_mistakes",
+                "memory_tip",
+                "example_question",
+                "example_answer",
+            ):
+                if col in row and self.norm(row.get(col)) and len(self.norm(row.get(col))) < 12:
+                    self.warn(path, idx, f"{col} は詳細記事用の任意列です。本文としては短めです")
+
+    def validate_guide_articles(self) -> None:
+        path = DATA_DIR / "guide_articles.csv"
+        required = {
+            "slug",
+            "genre",
+            "title",
+            "meta_description",
+            "lead",
+            "priority",
+            "section_1_heading",
+            "section_1_body",
+        }
+        _, rows = self.read_csv(path, required)
+        seen: set[str] = set()
+        for idx, row in enumerate(rows, start=2):
+            slug = self.require_text(path, row, idx, "slug")
+            if slug:
+                if slug in seen:
+                    self.error(path, idx, f"slug が重複しています: {slug}")
+                seen.add(slug)
+                if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", slug):
+                    self.error(path, idx, f"slug は半角英数字とハイフンで入力してください: {slug}")
+            self.require_text(path, row, idx, "genre")
+            self.require_text(path, row, idx, "title")
+            self.require_text(path, row, idx, "meta_description")
+            self.require_text(path, row, idx, "lead")
+            self.require_int(path, row, idx, "priority", min_value=1)
+            self.require_text(path, row, idx, "section_1_heading")
+            self.require_text(path, row, idx, "section_1_body")
+            for col in ("author_name", "fact_checked_at", "primary_sources", "original_note", "action_items"):
+                if col in row and not self.norm(row.get(col)):
+                    self.warn(path, idx, f"{col} はSEO品質確認用の推奨列です")
+            for item in [x.strip() for x in self.norm(row.get("primary_sources")).split(";") if x.strip()]:
+                if "|" in item:
+                    label, url = [x.strip() for x in item.split("|", 1)]
+                    if not label or not url.startswith(("http://", "https://")):
+                        self.warn(path, idx, f"primary_sources は ラベル|URL 形式を推奨します: {item}")
+            for n in range(1, 4):
+                q = self.norm(row.get(f"faq_{n}_question"))
+                a = self.norm(row.get(f"faq_{n}_answer"))
+                if bool(q) != bool(a):
+                    self.warn(path, idx, f"faq_{n}_question と faq_{n}_answer はセットで入力してください")
+                if q and not q.endswith(("?", "？")):
+                    self.warn(path, idx, f"faq_{n}_question は質問文として入力してください: {q}")
+                if a and re.fullmatch(r"[a-z0-9][a-z0-9-]*:.+", a):
+                    self.warn(path, idx, f"faq_{n}_answer に related_links らしき値が入っています: {a}")
+            related = self.norm(row.get("related_links"))
+            if related:
+                for item in [x.strip() for x in related.split(";") if x.strip()]:
+                    target = item.split(":", 1)[0].strip()
+                    if target.startswith(("http://", "https://")):
+                        continue
+                    if target and target not in seen and not re.fullmatch(r"[a-z0-9][a-z0-9-]*", target):
+                        self.warn(path, idx, f"related_links の内部リンク先 slug 形式を確認してください: {target}")
 
     def run(self) -> int:
         self.validate_past_questions()
         self.validate_original_questions()
         self.validate_ichimon()
         self.validate_glossary()
+        self.validate_guide_articles()
 
         for issue in self.issues:
             print(issue.format(), file=sys.stderr if issue.level == "ERROR" else sys.stdout)

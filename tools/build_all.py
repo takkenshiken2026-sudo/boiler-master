@@ -20,12 +20,13 @@ def main() -> int:
     py = sys.executable
     run([py, "tools/validate_csv.py"])
     run([py, "tools/apply_site_config.py"])
-    run([py, "tools/build_exam_guide_articles.py"])
     run([py, "tools/csv_to_exam_site_master.py"])
     run([py, "tools/glossary_csv_to_eisei_embed_js.py"])
     run([py, "tools/csv_to_eisei_ichimon_js.py"])
     run([py, "tools/build_past_question_pages.py"])
+    run([py, "tools/build_article_pages.py"])
     run([py, "tools/build_glossary_pages.py"])
+    run([py, "tools/validate_generated_seo.py"])
     run(["bash", "tools/prepare_public_site.sh"])
     return 0
 
