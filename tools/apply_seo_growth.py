@@ -558,8 +558,114 @@ def enrich_theme_glossary() -> int:
     return updated
 
 
+def append_glossary_terms_batch2() -> int:
+    from tools.seo_batch2_data import NEW_GLOSSARY_TERMS_BATCH2
+
+    text = GLOSSARY_CSV.read_text(encoding="utf-8-sig")
+    rows = list(csv.DictReader(text.splitlines()))
+    fieldnames = list(rows[0].keys()) if rows else []
+    if not fieldnames:
+        fieldnames = [
+            "term",
+            "reading",
+            "category",
+            "tags",
+            "short_def",
+            "definition",
+            "related_terms",
+            "legal_basis",
+            "importance",
+            "explanation",
+        ]
+    existing = {norm(r.get("term")) for r in rows}
+    added = 0
+    for row in NEW_GLOSSARY_TERMS_BATCH2:
+        if norm(row.get("term")) in existing:
+            continue
+        rows.append(row)
+        existing.add(norm(row.get("term")))
+        added += 1
+    if added:
+        with GLOSSARY_CSV.open("w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+            writer.writeheader()
+            writer.writerows(rows)
+    print(f"glossary_terms: +{added} (total {len(rows)})")
+    return added
+
+
+def append_guide_articles_batch2() -> int:
+    from tools.seo_batch2_data import NEW_GUIDE_ARTICLES_BATCH2
+
+    text = GUIDE_CSV.read_text(encoding="utf-8-sig")
+    rows = list(csv.DictReader(text.splitlines()))
+    fieldnames = list(rows[0].keys()) if rows else GUIDE_HEADER
+    existing = {norm(r.get("slug")) for r in rows}
+    added = 0
+    for article in NEW_GUIDE_ARTICLES_BATCH2:
+        if article["slug"] in existing:
+            continue
+        rows.append(article)
+        added += 1
+    if added:
+        with GUIDE_CSV.open("w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+            writer.writeheader()
+            writer.writerows(rows)
+    print(f"guide_articles batch2: +{added} (total {len(rows)})")
+    return added
+
+
+def append_guide_articles_batch3() -> int:
+    from tools.seo_batch3_guides import NEW_GUIDE_ARTICLES_BATCH3
+
+    text = GUIDE_CSV.read_text(encoding="utf-8-sig")
+    rows = list(csv.DictReader(text.splitlines()))
+    fieldnames = list(rows[0].keys()) if rows else GUIDE_HEADER
+    existing = {norm(r.get("slug")) for r in rows}
+    added = 0
+    for article in NEW_GUIDE_ARTICLES_BATCH3:
+        if article["slug"] in existing:
+            continue
+        rows.append(article)
+        added += 1
+    if added:
+        with GUIDE_CSV.open("w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+            writer.writeheader()
+            writer.writerows(rows)
+    print(f"guide_articles batch3: +{added} (total {len(rows)})")
+    return added
+
+
+def append_guide_articles_batch4() -> int:
+    from tools.seo_batch4_guides import NEW_GUIDE_ARTICLES_BATCH4
+
+    text = GUIDE_CSV.read_text(encoding="utf-8-sig")
+    rows = list(csv.DictReader(text.splitlines()))
+    fieldnames = list(rows[0].keys()) if rows else GUIDE_HEADER
+    existing = {norm(r.get("slug")) for r in rows}
+    added = 0
+    for article in NEW_GUIDE_ARTICLES_BATCH4:
+        if article["slug"] in existing:
+            continue
+        rows.append(article)
+        added += 1
+    if added:
+        with GUIDE_CSV.open("w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+            writer.writeheader()
+            writer.writerows(rows)
+    print(f"guide_articles batch4: +{added} (total {len(rows)})")
+    return added
+
+
 def main() -> int:
     append_guide_articles()
+    append_guide_articles_batch2()
+    append_guide_articles_batch3()
+    append_guide_articles_batch4()
+    append_glossary_terms_batch2()
     enrich_theme_glossary()
     return 0
 
