@@ -75,5 +75,17 @@
       "url": "https://www.exam.or.jp/",
       "description": "2級ボイラー技士試験の日程・受験案内・公表問題などの公式情報を確認してください。"
     }
+  ],
+  "guideArticleGenres": [
+    {"id": "overview", "label": "試験概要", "phase": "制度を知る", "style": "overview", "hint": ""},
+    {"id": "preparation", "label": "受験準備", "phase": "制度を知る", "style": "institution", "hint": ""},
+    {"id": "strategy", "label": "試験対策", "phase": "学習を設計する", "style": "study", "hint": ""},
+    {"id": "study-plan", "label": "学習計画", "phase": "学習を設計する", "style": "study", "hint": ""},
+    {"id": "study-method", "label": "学習法", "phase": "学習を設計する", "style": "study", "hint": ""},
+    {"id": "past-questions", "label": "過去問活用", "phase": "演習と定着", "style": "practice", "hint": ""},
+    {"id": "field-study", "label": "科目別対策", "phase": "演習と定着", "style": "practice", "hint": ""},
+    {"id": "key-topic", "label": "重要論点", "phase": "演習と定着", "style": "practice", "hint": ""},
+    {"id": "law", "label": "法令対策", "phase": "演習と定着", "style": "practice", "hint": ""},
+    {"id": "career", "label": "キャリア", "phase": "合格後", "style": "meta", "hint": ""}
   ]
 }

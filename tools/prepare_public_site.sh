@@ -15,6 +15,8 @@ for f in \
   site-config.js \
   site-pages.css \
   site-theme.css \
+  site-q-index.js \
+  site-terms-index.js \
   site-analytics.js \
   CNAME \
   robots.txt \
@@ -23,15 +25,11 @@ for f in \
   eisei1-master-data.js \
   eisei1-data-glossary.js \
   eisei1-data-original.js \
-  eisei1-data-ichimon.js \
-  exam-site-data.js \
-  exam-site-data-glossary.js \
-  exam-site-data-original.js \
-  exam-site-data-ichimon.js
+  eisei1-data-ichimon.js
 do
   if [[ ! -e "$f" ]]; then
     echo "prepare_public_site.sh: 必須ファイルがありません: $f" >&2
-    echo "先に python3 tools/csv_to_exam_site_master.py と各生成スクリプトを実行してください。" >&2
+    echo "先に python3 tools/build_all.py を実行してください。" >&2
     exit 1
   fi
   cp "$f" "$OUT/"
@@ -41,5 +39,24 @@ for d in articles q terms; do
     cp -R "$ROOT/$d" "$OUT/"
   fi
 done
+# サイト固有 SPA データ（eisei1 / eisei2 など）。無ければスキップ。
+for f in eisei1-*.js eisei2-*.js; do
+  if [[ -f "$ROOT/$f" ]]; then
+    cp "$ROOT/$f" "$OUT/"
+  fi
+done
+# 新テンプレート標準のデータファイルを持つサイトでは、あわせて公開する。
+for f in exam-site-data-*.js; do
+  if [[ -f "$ROOT/$f" ]]; then
+    cp "$ROOT/$f" "$OUT/"
+  fi
+done
+if [[ -f "$ROOT/privacy-terms.html" ]]; then
+  cp "$ROOT/privacy-terms.html" "$OUT/"
+fi
+if [[ -f "$ROOT/docs/glossary-article-slugs.json" ]]; then
+  mkdir -p "$OUT/docs"
+  cp "$ROOT/docs/glossary-article-slugs.json" "$OUT/docs/"
+fi
 n="$(find "$OUT" -type f | wc -l | tr -d ' ')"
 echo "prepare_public_site.sh: $OUT に $n ファイルを配置しました。"

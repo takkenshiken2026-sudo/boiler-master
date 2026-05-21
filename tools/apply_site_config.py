@@ -15,7 +15,6 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from tools.site_config import (
-    brand_logo_text,
     brand_mark,
     brand_name,
     category_to_field_map,
@@ -24,12 +23,13 @@ from tools.site_config import (
     copyright_text,
     exam_name,
     ga4_measurement_id,
+    learning_nav_label,
     official_organization,
     primary_external_link,
     sync_config_files,
     fields,
 )
-from tools.html_footer import site_page_footer, site_page_header
+from tools.html_footer import site_page_footer, site_page_header, site_shell_footer
 
 
 TEXT_TARGETS = [
@@ -53,6 +53,7 @@ def replace_all(text: str) -> str:
     origin = clean_origin()
     host = origin.replace("https://", "").replace("http://", "").strip("/")
     official = primary_external_link()
+    orig_nav_label = learning_nav_label("tnav-orig", "実践演習")
     replacements = [
         ("© 2026 Sampleマスター学習支援・YOUR-DOMAIN.example", copyright_text()),
         ("Sampleマスター", brand_name()),
@@ -62,13 +63,18 @@ def replace_all(text: str) -> str:
         ("https://example.com/contact", contact_url()),
         ("window.__GA4_MEASUREMENT_ID__=\"\"", f'window.__GA4_MEASUREMENT_ID__="{ga4_measurement_id()}"'),
         ('var DEFAULT_MID = "";', f'var DEFAULT_MID = "{ga4_measurement_id()}";'),
-        (">オリジナル問題<", ">実践演習<"),
-        ("オリジナル演習", "実践演習"),
-        ("単元別問題データ", "実践演習データ"),
         ("一般社団法人 試験実施団体", official_organization()),
         ("試験実施団体（試験・登録の公式）", official.get("label", official_organization())),
         ("https://example.com/", official.get("url", "https://example.com/")),
     ]
+    if orig_nav_label == "実践演習":
+        replacements.extend(
+            [
+                ("オリジナル問題", "実践演習"),
+                ("オリジナル演習", "実践演習"),
+                ("単元別問題データ", "実践演習データ"),
+            ]
+        )
     if exam_name() != "◯◯試験（プレースホルダー）":
         replacements.append(("◯◯試験", exam_name()))
     for src, dst in replacements:
@@ -111,14 +117,14 @@ def replace_static_chrome(text: str, path: Path) -> str:
         return text
     rel_path = path.relative_to(ROOT)
     text = re.sub(
-        r'\s*<header class="site-page-header(?: site-page-header--wide)?">.*?</header>',
+        r'\s*<header class="(?:site-page-header(?: site-page-header--wide)?|topnav site-shell-header(?: site-shell-header--wide)?)">.*?</header>',
         "\n" + site_page_header(rel_path, current=current),
         text,
         count=1,
         flags=re.S,
     )
     text = re.sub(
-        r'\s*<footer class="site-page-footer(?: site-page-footer--wide)?">.*?</footer>\s*(?:<!-- GA4:.*?-->\s*)?(?:<script>window\.__GA4_MEASUREMENT_ID__="[^"]*";</script>\s*)?(?:<script defer src="[^"]*site-analytics\.js"></script>\s*)?',
+        r'\s*<footer class="(?:site-page-footer(?: site-page-footer--wide)?|site-footer)[^"]*".*?</footer>\s*(?:<!-- GA4:.*?-->\s*)?(?:<script>window\.__GA4_MEASUREMENT_ID__="[^"]*";</script>\s*)?(?:<script defer src="[^"]*site-analytics\.js"></script>\s*)?',
         "\n" + site_page_footer(rel_path, current=current),
         text,
         count=1,
@@ -153,34 +159,35 @@ def ensure_index_theme(text: str) -> str:
     return text
 
 
+def update_index_shell_footer(text: str) -> str:
+    """SPA フッターを site-config の navigation.footer と同型に揃える。"""
+    block = site_shell_footer(Path("index.html"), fixed=True, include_analytics=False)
+    indented = "\n".join(("  " + line) if line else line for line in block.splitlines())
+    return re.sub(
+        r'\n  <footer class="site-footer[^"]*" role="contentinfo">.*?</footer>',
+        "\n" + indented,
+        text,
+        count=1,
+        flags=re.S,
+    )
+
+
 def update_index_brand_mark(text: str) -> str:
     mark = html.escape(brand_mark())
-    logo = html.escape(brand_logo_text())
-    exam = html.escape(exam_name())
+
+    def _inject_mark(m: re.Match[str]) -> str:
+        return f"{m.group(1)}{mark}{m.group(3)}"
+
     text = re.sub(
         r'(<div class="topnav-logo-mark"[^>]*>)(.*?)(</div>)',
-        lambda m: f"{m.group(1)}{mark}{m.group(3)}",
-        text,
-        count=1,
-        flags=re.S,
-    )
-    text = re.sub(
-        r'(<span class="topnav-logo-text">)(.*?)(</span>)',
-        lambda m: f"{m.group(1)}{logo}{m.group(3)}",
-        text,
-        count=1,
-        flags=re.S,
-    )
-    text = re.sub(
-        r'(<a class="topnav-logo"[^>]*aria-label=")(.*?)(")',
-        lambda m: f"{m.group(1)}{logo}、{exam}対策のトップへ{m.group(3)}",
+        _inject_mark,
         text,
         count=1,
         flags=re.S,
     )
     text = re.sub(
         r'(<span class="site-footer-logo-mark"[^>]*>)(.*?)(</span>)',
-        lambda m: f"{m.group(1)}{mark}{m.group(3)}",
+        _inject_mark,
         text,
         count=1,
         flags=re.S,
@@ -246,6 +253,7 @@ def main() -> int:
         new = replace_static_chrome(replace_all(old), path)
         if path == ROOT / "index.html":
             new = ensure_index_theme(new)
+            new = update_index_shell_footer(new)
             new = update_index_brand_mark(new)
             new = update_index_glossary_excerpt(new)
         if new != old:

@@ -27,7 +27,10 @@ def main() -> int:
     run([py, "tools/build_past_question_pages.py"])
     run([py, "tools/build_article_pages.py"])
     run([py, "tools/build_glossary_pages.py"])
+    run([py, "tools/build_sitemap.py"])
     run([py, "tools/validate_generated_seo.py"])
+    run([py, "tools/validate_internal_links.py"])
+    run([py, "tools/validate_public_content.py"])
     run(["bash", "tools/prepare_public_site.sh"])
     return 0
 
