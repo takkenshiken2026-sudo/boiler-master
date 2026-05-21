@@ -160,7 +160,11 @@ def q_index_filter_chip_btn(
 
 
 def parse_tags(raw: str) -> list[str]:
-    return [t.strip() for t in re.split(r"[,、/|]", raw) if t.strip()]
+    tags = [t.strip() for t in re.split(r"[,、/|]", raw) if t.strip()]
+    hidden = {
+        "過去問の試験ID・問番号・科目・正答番号に対応したサイト掲載用オリジナル問題",
+    }
+    return [t for t in tags if t not in hidden]
 
 
 def load_glossary_lookup() -> dict[str, str]:
@@ -209,14 +213,12 @@ def glossary_links_for_tags(tags: list[str], lookup: dict[str, str]) -> list[dic
 
 def index_item_dict(page: dict) -> dict:
     preview = stem_preview(page.get("stem_plain") or "")
-    tags = page.get("tags") or []
     search_bits = [
         f"第{page['qno']}問",
         page["category"],
         str(page["year"]),
         page.get("wareki", ""),
         preview,
-        *tags,
     ]
     return {
         "appId": page["app_id"],
@@ -226,12 +228,10 @@ def index_item_dict(page: dict) -> dict:
         "wareki": page.get("wareki", ""),
         "href": page["href_rel"],
         "preview": preview,
-        "tags": tags,
         "exempt": bool(page.get("is_exempt")),
         "invalidated": bool(page.get("is_invalidated")),
         "correct": page.get("correct"),
         "search": " ".join(x for x in search_bits if x),
-        "glossary": page.get("glossary_links") or [],
     }
 
 
@@ -244,26 +244,6 @@ def build_index_table_row(page: dict) -> str:
         if preview
         else '<span class="q-year-table-desc--empty">問題文は各ページで確認できます</span>'
     )
-    tag_html = "".join(
-        f'<span class="q-tag-badge">{html.escape(t)}</span>' for t in (page.get("tags") or [])
-    )
-    gloss = page.get("glossary_links") or []
-    gloss_html = (
-        " ".join(
-            f'<a class="q-glossary-link" href="{html.escape(g["href"])}" onclick="event.stopPropagation()">'
-            f"{html.escape(g['label'])}</a>"
-            for g in gloss
-        )
-        if gloss
-        else "—"
-    )
-    badges = []
-    if page.get("is_exempt"):
-        badges.append('<span class="q-year-table-badge">免除</span>')
-    if page.get("is_invalidated"):
-        badges.append('<span class="q-year-table-badge q-year-table-badge-warn">無効</span>')
-    note_cell = "".join(badges) if badges else "—"
-    app_href = html.escape(f"../index.html#past-play-{page['app_id']}")
     return (
         '<tr class="q-year-table-row" tabindex="0"'
         f' data-app-id="{page["app_id"]}"'
@@ -271,14 +251,8 @@ def build_index_table_row(page: dict) -> str:
         f' data-category="{html.escape(page["category"], quote=True)}">'
         f'<td class="q-year-table-no" data-label="問"><a href="{href}">{html.escape(label)}</a></td>'
         f'<td class="q-year-table-cat" data-label="分野">{html.escape(page["category"])}</td>'
-        f'<td class="q-year-table-tags" data-label="タグ">{tag_html or "—"}</td>'
         f'<td class="q-year-table-desc" data-label="問題文">{preview_cell}</td>'
-        f'<td class="q-year-table-gloss" data-label="用語">{gloss_html}</td>'
-        f'<td class="q-year-table-note" data-label="備考">{note_cell}</td>'
-        f'<td class="q-year-table-action" data-label="操作">'
-        f'<a class="q-row-link" href="{href}">解説</a> '
-        f'<a class="q-row-link q-row-link-app" href="{app_href}">演習</a>'
-        "</td></tr>"
+        "</tr>"
     )
 
 
@@ -340,9 +314,25 @@ def parse_explanation_choices(raw: str) -> dict[int, str]:
 
 
 CATEGORY_STUDY_HINTS: dict[str, str] = {
+    "ボイラーの構造に関する知識": (
+        "構造分野は、装置名だけを覚えると選択肢の入れ替えに弱くなります。"
+        "「どの部位が、何を通し、どの異常を防ぐのか」を一文で説明できる形にしてください。"
+        "特に水面計・安全弁・圧力計・給水装置・節炭器・空気予熱器は、目的、取付位置、異常時の兆候をセットで確認すると、似た選択肢を切り分けやすくなります。"
+    ),
+    "ボイラーの取扱いに関する知識": (
+        "取扱い分野は、操作手順の丸暗記よりも「なぜその順番なのか」を押さえると安定します。"
+        "低水位、失火、逆火、燃料圧力異常、排ガス温度上昇のような異常は、原因、確認箇所、直ちに避けるべき操作を並べて整理してください。"
+        "正解選択肢だけでなく、危険を拡大する操作や点検省略を述べた選択肢を見抜く練習が大切です。"
+    ),
+    "燃料及び燃焼に関する知識": (
+        "燃焼分野は、空気量、通風、燃料性状、排ガス成分の因果関係をつなげると得点源になります。"
+        "空気不足なら不完全燃焼やCO・すす、空気過剰なら排ガス損失や温度低下、燃焼温度上昇ならNOxというように、条件と結果を対で覚えてください。"
+        "数値や用語を単独で追うより、燃焼状態をどう判断し、どの調整につなげるかまで確認すると選択肢のすり替えに強くなります。"
+    ),
     "関係法令": (
-        "法令・制度は条文の趣旨と数字・期限をセットで覚えると得点しやすくなります。"
-        "関連用語は用語解説で押さえてから同年の過去問に戻ると定着しやすくなります。"
+        "関係法令は、誰が、いつ、何を、どこへ行うのかを分解すると判断しやすくなります。"
+        "安全弁、水面計、圧力計、定期自主検査、届出、検査証、作業主任者などは、義務の主体と記録・保存・報告の扱いを混同しやすい論点です。"
+        "数字や期限は語呂だけに頼らず、制度の目的と一緒に整理すると、似た表現の選択肢にも対応できます。"
     ),
     "労働衛生": (
         "衛生・安全の問題は用語の定義と数値基準の組み合わせが多いです。"
@@ -369,6 +359,118 @@ CATEGORY_STUDY_HINTS: dict[str, str] = {
 DEFAULT_WRONG_CHOICE_NOTE = "問題文の趣旨・試験制度の基本に照らすと誤りです。"
 
 
+FOCUS_PATTERNS: list[tuple[str, str]] = [
+    (r"^(.+?)に関する記述$", r"\1"),
+    (r"^(.+?)に関する問題$", r"\1"),
+    (r"^(.+?)として$", r"\1"),
+    (r"^(.+?)について$", r"\1"),
+    (r"^(.+?)の扱い$", r"\1の扱い"),
+    (r"^(.+?)の注意$", r"\1の注意"),
+]
+
+
+def question_focus(stem: str) -> str:
+    stem = norm(stem).replace("　", " ")
+    stem = re.sub(r"[。?？]\s*$", "", stem)
+    stem = re.sub(r"、?次のうちどれか$", "", stem)
+    stem = re.sub(r"、?適切でないものは$", "", stem)
+    stem = re.sub(r"、?適切なものは$", "", stem)
+    stem = re.sub(r"、?正しいものは$", "", stem)
+    stem = re.sub(r"、?誤っているものは$", "", stem)
+    stem = re.sub(r"、?不適切なものは$", "", stem)
+    stem = re.sub(r"として$", "として", stem)
+    for pat, repl in FOCUS_PATTERNS:
+        m = re.search(pat, stem)
+        if m:
+            focus = re.sub(pat, repl, stem).strip("。 、")
+            return meta_description(focus, 42)
+    return meta_description(stem, 42) or "この論点"
+
+
+def asks_incorrect(stem: str) -> bool:
+    return any(word in stem for word in ("適切でない", "誤っている", "正しくない", "不適切"))
+
+
+def sentence_cleanup(text: str) -> str:
+    text = re.sub(r"\s+", " ", norm(text))
+    return text.rstrip("。") + "。" if text else ""
+
+
+def choice_concept(choice: str) -> str:
+    s = sentence_cleanup(choice).rstrip("。")
+    if len(s) <= 34:
+        return s
+    return s[:33] + "…"
+
+
+def choice_issue_note(page: dict, wrong_choice: str, correct_choice: str) -> str:
+    stem = page.get("stem_plain") or ""
+    focus = question_focus(stem)
+    wrong = choice_concept(wrong_choice)
+    correct = choice_concept(correct_choice)
+    category = page.get("category") or ""
+    negative = asks_incorrect(stem)
+
+    if any(x in wrong_choice for x in ("だけ", "のみ", "必ず", "常に", "不要", "無関係")):
+        reason = (
+            "限定しすぎた表現が含まれており、ボイラーの装置・操作・法令では条件や例外を伴うことが多い点と合いません。"
+        )
+    elif any(x in wrong_choice for x in ("上昇", "高く", "増加")) and any(x in correct_choice for x in ("低下", "低く", "減少")):
+        reason = "増減の向きが正答の考え方と逆です。原因と結果の向きを取り違えないようにします。"
+    elif any(x in wrong_choice for x in ("低下", "低く", "減少")) and any(x in correct_choice for x in ("上昇", "高く", "増加")):
+        reason = "増減の向きが正答の考え方と逆です。どの条件で上がり、どの条件で下がるかを対で確認します。"
+    elif any(x in wrong_choice for x in ("安全弁", "水面計", "圧力計", "給水", "燃料", "通風", "空気", "排ガス", "検査", "届", "記録")):
+        reason = "設問で問われている主題とは別の装置・操作・手続に説明がずれており、論点のすり替えになっています。"
+    else:
+        reason = "設問の条件から導ける原因・目的・法令上の扱いとつながらず、正答選択肢の説明に置き換えることはできません。"
+
+    if negative:
+        return (
+            f"この選択肢は「{wrong}」という内容ですが、{focus}の基本的な扱いとしては成り立つ側の記述です。"
+            f"本問は不適切なものを選ぶ形式なので、正答の「{correct}」のように条件・目的・因果関係が崩れている記述を探します。"
+        )
+
+    cat_hint = ""
+    if category == "関係法令":
+        cat_hint = "法令問題では、主体・期限・記録・届出先のいずれを述べているかまで分けて読むのがコツです。"
+    elif category == "燃料及び燃焼に関する知識":
+        cat_hint = "燃焼問題では、空気量、燃料、通風、排ガス成分の因果関係を逆にしないことが重要です。"
+    elif category == "ボイラーの取扱いに関する知識":
+        cat_hint = "取扱い問題では、安全側の操作か、異常を拡大する操作かを必ず確認します。"
+    elif category == "ボイラーの構造に関する知識":
+        cat_hint = "構造問題では、装置の役割、取付位置、流体の流れをセットで確認します。"
+
+    return (
+        f"この選択肢は「{wrong}」という内容ですが、{focus}で問われる中心論点から外れます。"
+        f"{reason} 正答の「{correct}」と比べ、どの語が入れ替わっているかを確認してください。{cat_hint}"
+    )
+
+
+def generated_correct_body(page: dict) -> str:
+    correct = page.get("correct")
+    opt_text = page["opts"][correct - 1] if correct and 1 <= correct <= len(page["opts"]) else ""
+    focus = question_focus(page.get("stem_plain") or "")
+    category = page.get("category") or ""
+    negative = asks_incorrect(page.get("stem_plain") or "")
+    if negative:
+        head = (
+            f"本問は「適切でないもの」を選ぶ形式です。正答の（{correct}）「{choice_concept(opt_text)}」は、"
+            f"{focus}の基本的な考え方とずれているため選びます。"
+        )
+    else:
+        head = (
+            f"正答の（{correct}）「{choice_concept(opt_text)}」は、{focus}について、"
+            "設問が求めている原因・目的・扱いと最もよく対応しています。"
+        )
+    tail = {
+        "ボイラーの構造に関する知識": "構造分野では、部品名を暗記するだけでなく、その部品がどの流体を扱い、どの異常を防ぐかまで結び付けて判断します。",
+        "ボイラーの取扱いに関する知識": "取扱い分野では、安全確認、異常時対応、日常点検の目的を順番で押さえると、危険な操作を述べた選択肢を外しやすくなります。",
+        "燃料及び燃焼に関する知識": "燃焼分野では、空気量・通風・排ガス・燃料性状の因果関係を逆にしないことが重要です。",
+        "関係法令": "関係法令では、義務の主体、届出・検査・記録の対象、期限や保存期間の扱いを分けて読むと安定します。",
+    }.get(category, "選択肢の語句だけで判断せず、設問の条件と結び付くかを確認しましょう。")
+    return head + tail
+
+
 def split_legacy_explanation(exp: str) -> tuple[str, str]:
     """「正解は1です。…」形式を (要約, 本文) に分割。"""
     m = re.match(r"^正解は\s*(\d+)\s*です[。.]?\s*(.*)$", exp, re.DOTALL)
@@ -383,13 +485,18 @@ def build_choice_commentary(page: dict, row: dict) -> list[tuple[int, str, str]]
     """(番号, 選択肢文, 解説) のリスト。正答以外。"""
     parsed = parse_explanation_choices(norm(row.get("explanation_choices")))
     correct = page.get("correct")
+    correct_choice = (
+        page["opts"][correct - 1]
+        if correct is not None and 1 <= correct <= len(page["opts"])
+        else ""
+    )
     items: list[tuple[int, str, str]] = []
     for i, opt in enumerate(page["opts"], start=1):
         if page.get("is_invalidated") or correct is None:
             continue
         if i == correct:
             continue
-        note = parsed.get(i) or DEFAULT_WRONG_CHOICE_NOTE
+        note = parsed.get(i) or choice_issue_note(page, opt, correct_choice) or DEFAULT_WRONG_CHOICE_NOTE
         items.append((i, opt, note))
     return items
 
@@ -410,7 +517,10 @@ def build_explanation_html(page: dict, row: dict) -> str:
     if not summary and not correct_body and not point:
         leg_summary, leg_body = split_legacy_explanation(base)
         summary = summary or leg_summary
-        correct_body = correct_body or leg_body
+        if leg_body and "公表問題のため、選択肢ごとの理解は一問一答でも確認してください" not in leg_body:
+            correct_body = correct_body or leg_body
+
+    correct_body = correct_body or generated_correct_body(page)
 
     parts: list[str] = ['<div class="q-exp">']
     if summary:
@@ -447,6 +557,12 @@ def build_explanation_html(page: dict, row: dict) -> str:
             )
 
     hint = point or CATEGORY_STUDY_HINTS.get(page.get("category") or "", "")
+    if hint and page.get("correct"):
+        focus = question_focus(page.get("stem_plain") or "")
+        hint = (
+            f"{hint} この問題では「{focus}」が軸です。"
+            "復習時は、正答だけを覚えず、他の選択肢がどの装置・操作・数値・法令手続にすり替わっているかを一つずつ言語化してください。"
+        )
     if hint:
         parts.append(
             '<section class="q-exp-section" aria-labelledby="q-exp-tip-h">'
@@ -883,8 +999,7 @@ def build_q_index(pages: list[dict], base_url: str) -> str:
             f'<div class="q-year-table-wrap" id="year-body-{y}">'
             f'<table class="q-year-table" aria-labelledby="year-{y}-heading">'
             "<thead><tr>"
-            '<th scope="col">問</th><th scope="col">分野</th><th scope="col">タグ</th>'
-            '<th scope="col">問題文（抜粋）</th><th scope="col">用語</th><th scope="col">備考</th><th scope="col">操作</th>'
+            '<th scope="col">問</th><th scope="col">分野</th><th scope="col">問題文（抜粋）</th>'
             "</tr></thead>"
             f"<tbody>{rows_html}</tbody>"
             "</table></div></section>"
@@ -997,8 +1112,7 @@ def build_q_index(pages: list[dict], base_url: str) -> str:
           <div class="q-year-table-wrap">
             <table class="q-year-table">
               <thead><tr>
-                <th scope="col">問</th><th scope="col">分野</th><th scope="col">タグ</th>
-                <th scope="col">問題文（抜粋）</th><th scope="col">用語</th><th scope="col">備考</th><th scope="col">操作</th>
+                <th scope="col">問</th><th scope="col">分野</th><th scope="col">問題文（抜粋）</th>
               </tr></thead>
               <tbody id="q-index-flat-body"></tbody>
             </table>
