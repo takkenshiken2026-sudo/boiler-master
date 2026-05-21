@@ -4257,8 +4257,15 @@ html:not(.js) .terms-idx-seo-fallback .terms-idx-seo-list a {
     border-left: none;
     border-right: none;
   }
+  .terms-idx-table-wrap {
+    overflow-x: hidden;
+  }
   .terms-idx-table:not(.terms-idx-table-duo) thead {
     display: none;
+  }
+  .terms-idx-table:not(.terms-idx-table-duo) {
+    min-width: 0;
+    max-width: 100%;
   }
   .terms-idx-table:not(.terms-idx-table-duo),
   .terms-idx-table:not(.terms-idx-table-duo) tbody,
@@ -4266,6 +4273,7 @@ html:not(.js) .terms-idx-seo-fallback .terms-idx-seo-list a {
   .terms-idx-table:not(.terms-idx-table-duo) td {
     display: block;
     width: 100%;
+    box-sizing: border-box;
   }
   .terms-idx-table:not(.terms-idx-table-duo) tbody tr {
     padding: 12px 16px;
@@ -4280,6 +4288,11 @@ html:not(.js) .terms-idx-seo-fallback .terms-idx-seo-list a {
   }
   .terms-idx-table:not(.terms-idx-table-duo) .terms-idx-td-term {
     font-size: var(--fs-sub);
+  }
+  .terms-idx-table:not(.terms-idx-table-duo) .terms-idx-td-term,
+  .terms-idx-table:not(.terms-idx-table-duo) .terms-idx-td-cat,
+  .terms-idx-table:not(.terms-idx-table-duo) .terms-idx-td-snippet {
+    width: 100%;
   }
   .terms-idx-table:not(.terms-idx-table-duo) .terms-idx-td-term a {
     color: var(--accent-emphasis);
