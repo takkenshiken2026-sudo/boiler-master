@@ -2538,17 +2538,17 @@ html:not(.js) .terms-idx-seo-fallback .terms-idx-seo-list a {
 }
 .terms-idx-table:not(.terms-idx-table-duo) .terms-idx-th-cat,
 .terms-idx-table:not(.terms-idx-table-duo) .terms-idx-td-cat {
-  width: 14%;
+  width: 26%;
 }
 .terms-idx-table:not(.terms-idx-table-duo) .terms-idx-th-def,
 .terms-idx-table:not(.terms-idx-table-duo) .terms-idx-td-snippet {
-  width: 62%;
+  width: 50%;
 }
 .terms-idx-th-term {
   width: 22%;
 }
 .terms-idx-th-cat {
-  width: 14%;
+  width: 26%;
 }
 .terms-idx-th-def {
   width: auto;
@@ -2612,7 +2612,9 @@ html:not(.js) .terms-idx-seo-fallback .terms-idx-seo-list a {
 .terms-idx-td-cat {
   color: var(--text2);
   font-weight: 600;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .terms-idx-td-snippet {
   color: var(--text2);
@@ -3287,12 +3289,13 @@ html:not(.js) .terms-idx-seo-fallback .terms-idx-seo-list a {
 }
 .terms-index-panel .terms-idx-table .terms-idx-th-cat,
 .terms-index-panel .terms-idx-table .terms-idx-td-cat {
-  width: 14%;
-  white-space: nowrap;
+  width: 26%;
+  white-space: normal;
+  line-height: 1.45;
 }
 .terms-index-panel .terms-idx-table .terms-idx-th-def,
 .terms-index-panel .terms-idx-table .terms-idx-td-snippet {
-  width: 62%;
+  width: 50%;
 }
 .terms-index-panel .terms-idx-table .terms-idx-td-term,
 .terms-index-panel .terms-idx-table .terms-idx-td-cat,
