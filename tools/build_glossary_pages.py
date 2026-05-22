@@ -197,7 +197,7 @@ def split_semicolon(s: str) -> list[str]:
     return [x.strip() for x in (s or "").split(";") if x.strip()]
 
 
-TERMS_INDEX_CSS_VER = "20260522-terms-cat-col"
+TERMS_INDEX_CSS_VER = "20260522-terms-rewrite"
 TERMS_INDEX_JS_VER = "20260521-terms-snippet"
 TERMS_INDEX_SEARCH_PLACEHOLDER = "例：ストレスチェック、ラインケア、うつ病…"
 
@@ -673,10 +673,11 @@ def build_term_html(
             f'<div class="related-links term-related-links">{rel_html}</div></div>'
         )
 
-    lead = (
+    lead_fallback = (
         f"{term}は、{short_def.rstrip('。')}。"
         f"{exam_name()}では、{category}分野の用語として、意味・根拠・似た用語との違いをセットで押さえると理解しやすくなります。"
     )
+    lead_text = article_lead or lead_fallback
     points = study_points(explanation)
     points_html = ""
     if exam_points:
@@ -684,7 +685,10 @@ def build_term_html(
     elif points:
         points_html = '<ol class="term-point-list">' + "".join(f"<li>{html.escape(p)}</li>" for p in points) + "</ol>"
     detail_html = text_paragraphs(term_detail_body or definition)
-    mistakes_html = text_paragraphs(common_mistakes)
+    if common_mistakes and ";" in common_mistakes and "\n" not in common_mistakes:
+        mistakes_html = semicolon_list_html(common_mistakes)
+    else:
+        mistakes_html = text_paragraphs(common_mistakes)
     memory_html = f"<blockquote><p>{html.escape(memory_tip)}</p></blockquote>" if memory_tip else ""
     example_html = ""
     if example_question or example_answer:
@@ -895,7 +899,7 @@ def build_term_html(
       <span class="meta-updated">{meta_line}</span>
     </div>
     <h1 class="article-title">{html.escape(article_title or term + 'とは？意味・根拠・試験ポイントを整理')}</h1>
-    <p class="article-lead"><strong>{html.escape(term)}</strong>について、定義・根拠・試験での押さえ方をまとめます。{html.escape(article_lead or lead)}</p>
+    <p class="article-lead">{html.escape(lead_text)}</p>
     {toc_html}
     {quality_html}
     {can_do_html}
