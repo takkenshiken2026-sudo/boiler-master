@@ -29,8 +29,8 @@
 - `explanation`（汎用テンプレ文の置き換え）
 - `faq_1_*` 〜 `faq_3_*`
 
-## 今後の改善（任意）
+## 深化作業（2026-05-22 完了）
 
-- 用語ごとの手書きオーバーライド（高頻出語から）
-- 比較表（`comparison_html` 列の追加など）
-- `related_terms` 未登録語の解消（validate 警告）
+- `tools/glossary_related_aliases.py` + `fix_glossary_related_terms.py` で `related_terms` を登録済み用語名へ正規化
+- `tools/glossary_article_overrides.py` + `apply_glossary_overrides.py` で高頻出15語に比較表・手書き本文を適用
+- `comparison_html` 列を CSV / build に追加（比較・整理表セクション）

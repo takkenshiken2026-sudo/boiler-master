@@ -197,7 +197,7 @@ def split_semicolon(s: str) -> list[str]:
     return [x.strip() for x in (s or "").split(";") if x.strip()]
 
 
-TERMS_INDEX_CSS_VER = "20260522-terms-rewrite"
+TERMS_INDEX_CSS_VER = "20260522-terms-enhance"
 TERMS_INDEX_JS_VER = "20260521-terms-snippet"
 TERMS_INDEX_SEARCH_PLACEHOLDER = "例：ストレスチェック、ラインケア、うつ病…"
 
@@ -603,6 +603,7 @@ def build_term_html(
     exam_points = norm(entry.get("exam_points"))
     common_mistakes = norm(entry.get("common_mistakes"))
     memory_tip = norm(entry.get("memory_tip"))
+    comparison_html = norm(entry.get("comparison_html"))
     example_question = norm(entry.get("example_question"))
     example_answer = norm(entry.get("example_answer"))
 
@@ -685,6 +686,11 @@ def build_term_html(
     elif points:
         points_html = '<ol class="term-point-list">' + "".join(f"<li>{html.escape(p)}</li>" for p in points) + "</ol>"
     detail_html = text_paragraphs(term_detail_body or definition)
+    comparison_section_html = ""
+    if comparison_html:
+        comparison_section_html = (
+            f'<div class="term-comparison-wrap">{comparison_html}</div>'
+        )
     if common_mistakes and ";" in common_mistakes and "\n" not in common_mistakes:
         mistakes_html = semicolon_list_html(common_mistakes)
     else:
@@ -771,6 +777,7 @@ def build_term_html(
         ("summary", "まず押さえる要点", text_paragraphs(short_def)),
         ("points", "試験で押さえるポイント", points_html),
         ("definition", "定義と基本理解", detail_html),
+        ("compare", "比較・整理表", comparison_section_html),
         ("legal", "法令・根拠", legal_basis_html(legal)),
         ("exam", "選択肢で問われやすい点", text_paragraphs(explanation)),
         ("mistakes", "よくある誤解・注意点", mistakes_html),
@@ -1269,6 +1276,7 @@ def main() -> int:
                 "faq_2_answer": norm(row.get("faq_2_answer")),
                 "faq_3_question": norm(row.get("faq_3_question")),
                 "faq_3_answer": norm(row.get("faq_3_answer")),
+                "comparison_html": norm(row.get("comparison_html")),
                 "slug_file": slug_file,
                 "field_hub": field_hub_slug(norm(row.get("category"))),
             }
