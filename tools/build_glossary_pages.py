@@ -28,6 +28,7 @@ if str(ROOT) not in sys.path:
 from tools.html_footer import (
     ROBOTS_INDEX_FOLLOW,
     breadcrumb_html,
+    shell_body_class,
     site_page_footer,
     site_page_header,
     site_page_wrap_close,
@@ -129,9 +130,9 @@ def term_alias_variants(term: str) -> set[str]:
     return {v for v in variants if v}
 
 
-def term_slug(term: str, reading: str, used: dict[str, str]) -> str:
-    """用語+読みで安定したスラッグ。衝突時は連番を付与。"""
-    base = f"{term.strip()}|{reading.strip()}"
+def term_slug(term: str, used: dict[str, str]) -> str:
+    """用語名で安定したスラッグ。衝突時は連番を付与。"""
+    base = term.strip()
     h = hashlib.sha256(base.encode("utf-8")).hexdigest()[:16]
     s = f"g-{h}"
     if s not in used:
@@ -197,7 +198,7 @@ def split_semicolon(s: str) -> list[str]:
     return [x.strip() for x in (s or "").split(";") if x.strip()]
 
 
-TERMS_INDEX_CSS_VER = "20260522-terms-enhance"
+TERMS_INDEX_CSS_VER = "20260525-responsive-h1"
 TERMS_INDEX_JS_VER = "20260521-terms-snippet"
 TERMS_INDEX_SEARCH_PLACEHOLDER = "例：ストレスチェック、ラインケア、うつ病…"
 
@@ -222,6 +223,7 @@ def parse_term_tags(raw: str) -> list[str]:
 def terms_index_href(slug_file: str) -> str:
     """用語一覧からのリンク（/terms/ 配下）。pathname が /terms のときも壊れないようルート相対にする。"""
     return f"/terms/{slug_file.lstrip('/')}"
+
 
 
 def sort_terms_index_entries(entries: list[dict]) -> list[dict]:
@@ -603,7 +605,6 @@ def build_term_html(
     exam_points = norm(entry.get("exam_points"))
     common_mistakes = norm(entry.get("common_mistakes"))
     memory_tip = norm(entry.get("memory_tip"))
-    comparison_html = norm(entry.get("comparison_html"))
     example_question = norm(entry.get("example_question"))
     example_answer = norm(entry.get("example_answer"))
 
@@ -674,11 +675,10 @@ def build_term_html(
             f'<div class="related-links term-related-links">{rel_html}</div></div>'
         )
 
-    lead_fallback = (
+    lead = (
         f"{term}は、{short_def.rstrip('。')}。"
         f"{exam_name()}では、{category}分野の用語として、意味・根拠・似た用語との違いをセットで押さえると理解しやすくなります。"
     )
-    lead_text = article_lead or lead_fallback
     points = study_points(explanation)
     points_html = ""
     if exam_points:
@@ -686,15 +686,7 @@ def build_term_html(
     elif points:
         points_html = '<ol class="term-point-list">' + "".join(f"<li>{html.escape(p)}</li>" for p in points) + "</ol>"
     detail_html = text_paragraphs(term_detail_body or definition)
-    comparison_section_html = ""
-    if comparison_html:
-        comparison_section_html = (
-            f'<div class="term-comparison-wrap">{comparison_html}</div>'
-        )
-    if common_mistakes and ";" in common_mistakes and "\n" not in common_mistakes:
-        mistakes_html = semicolon_list_html(common_mistakes)
-    else:
-        mistakes_html = text_paragraphs(common_mistakes)
+    mistakes_html = text_paragraphs(common_mistakes)
     memory_html = f"<blockquote><p>{html.escape(memory_tip)}</p></blockquote>" if memory_tip else ""
     example_html = ""
     if example_question or example_answer:
@@ -777,7 +769,6 @@ def build_term_html(
         ("summary", "まず押さえる要点", text_paragraphs(short_def)),
         ("points", "試験で押さえるポイント", points_html),
         ("definition", "定義と基本理解", detail_html),
-        ("compare", "比較・整理表", comparison_section_html),
         ("legal", "法令・根拠", legal_basis_html(legal)),
         ("exam", "選択肢で問われやすい点", text_paragraphs(explanation)),
         ("mistakes", "よくある誤解・注意点", mistakes_html),
@@ -894,7 +885,7 @@ def build_term_html(
 <link rel="stylesheet" href="{html.escape(css_href)}">
 <link rel="stylesheet" href="{html.escape(theme_href)}">
 </head>
-<body>
+<body class="{shell_body_class('term-article-page')}">
 {site_page_wrap_open()}
 {page_header}
 <main class="seo-article-main">
@@ -906,7 +897,7 @@ def build_term_html(
       <span class="meta-updated">{meta_line}</span>
     </div>
     <h1 class="article-title">{html.escape(article_title or term + 'とは？意味・根拠・試験ポイントを整理')}</h1>
-    <p class="article-lead">{html.escape(lead_text)}</p>
+    <p class="article-lead"><strong>{html.escape(term)}</strong>について、定義・根拠・試験での押さえ方をまとめます。{html.escape(article_lead or lead)}</p>
     {toc_html}
     {quality_html}
     {can_do_html}
@@ -994,7 +985,7 @@ def build_field_hub_html(
 <link rel="stylesheet" href="{html.escape(rel_css(rel_path))}">
 <link rel="stylesheet" href="{html.escape(rel_theme_css(rel_path))}">
 </head>
-<body>
+<body class="{shell_body_class('terms-field-hub-page')}">
 {site_page_wrap_open()}
 {page_header}
 <main class="site-page-main terms-idx-main">
@@ -1116,7 +1107,7 @@ def build_terms_index(entries: list[dict], base_url: str) -> str:
 <link rel="stylesheet" href="../site-theme.css">
 <script>document.documentElement.classList.add("js");</script>
 </head>
-<body class="terms-index-page" data-terms-total="{n_terms}">
+<body class="{shell_body_class('terms-index-page')}" data-terms-total="{n_terms}">
 {site_page_wrap_open()}
 {terms_header}
 <main class="site-page-main">
@@ -1129,13 +1120,15 @@ def build_terms_index(entries: list[dict], base_url: str) -> str:
         <h2 id="terms-index-heading">用語一覧</h2>
         <p>全{n_terms}語・{n_cats}分野。キーワード検索と分野で絞り込めます。</p>
       </div>
-      <span id="terms-idx-hit" class="terms-index-hit" aria-live="polite">{n_terms} / {n_terms} 語</span>
     </div>
     <div class="terms-index-tools">
+      <div class="terms-index-tools-primary">
       <label class="terms-index-search" for="terms-idx-q">
-        <span>用語検索</span>
+        <span class="u-visually-hidden">用語検索</span>
         <input id="terms-idx-q" type="search" inputmode="search" autocomplete="off" placeholder="{html.escape(TERMS_INDEX_SEARCH_PLACEHOLDER, quote=True)}">
       </label>
+      <span id="terms-idx-hit" class="terms-index-hit" aria-live="polite">{n_terms} / {n_terms} 語</span>
+      </div>
       <div class="terms-idx-chips" aria-label="分野フィルタ">
 {chips_html}
       </div>
@@ -1211,7 +1204,7 @@ def sync_index_glossary_slug_map(entries: list[dict]) -> None:
     else:
         needle = '<div id="glossary-list">'
         if needle not in text:
-            raise ValueError("index.html: #glossary-list が見つかりません")
+            return
         text = text.replace(needle, needle + "\n" + script, 1)
     INDEX_HTML.write_text(text, encoding="utf-8")
 
@@ -1238,7 +1231,6 @@ def main() -> int:
         term = norm(row.get("term"))
         if not term:
             raise ValueError(f"line {i}: term が空です")
-        reading = norm(row.get("reading"))
         legacy_slug = norm(row.get("slug")) or norm(row.get("url_slug"))
         if legacy_slug:
             if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", legacy_slug):
@@ -1247,13 +1239,12 @@ def main() -> int:
             slug_file = f"{legacy_slug}.html"
             if slug_file in used_slugs:
                 raise ValueError(f"line {i}: slug が重複しています: {legacy_slug}")
-            used_slugs[slug_file] = f"{term}|{reading}"
+            used_slugs[slug_file] = term
         else:
-            slug_file = term_slug(term, reading, used_slugs) + ".html"
+            slug_file = term_slug(term, used_slugs) + ".html"
         entries.append(
             {
                 "term": term,
-                "reading": reading,
                 "category": norm(row.get("category")),
                 "tags": norm(row.get("tags")),
                 "short_def": norm(row.get("short_def")),
@@ -1276,7 +1267,6 @@ def main() -> int:
                 "faq_2_answer": norm(row.get("faq_2_answer")),
                 "faq_3_question": norm(row.get("faq_3_question")),
                 "faq_3_answer": norm(row.get("faq_3_answer")),
-                "comparison_html": norm(row.get("comparison_html")),
                 "slug_file": slug_file,
                 "field_hub": field_hub_slug(norm(row.get("category"))),
             }

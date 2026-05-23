@@ -192,8 +192,8 @@ class Validator:
                             f"related_links の形式を確認してください（例: guide:slug:ラベル）: {token!r}",
                         )
 
-    def validate_original_questions(self) -> None:
-        path = DATA_DIR / "original_questions.csv"
+    def validate_practice_questions(self) -> None:
+        path = DATA_DIR / "practice_questions.csv"
         required = {
             "question_no",
             "type",
@@ -220,8 +220,8 @@ class Validator:
             self.require_text(path, row, idx, "explanation")
             self.validate_choices_and_correct(path, row, idx, allow_invalidated=False)
 
-    def validate_ichimon(self) -> None:
-        path = DATA_DIR / "past_questions_marubatsu_all_explanations.csv"
+    def validate_ichimon_questions(self) -> None:
+        path = DATA_DIR / "ichimon_questions.csv"
         required = {"id", "question", "answer", "explanation", "category"}
         _, rows = self.read_csv(path, required)
         seen: set[str] = set()
@@ -244,7 +244,6 @@ class Validator:
         path = DATA_DIR / "glossary_terms.csv"
         required = {
             "term",
-            "reading",
             "category",
             "tags",
             "short_def",
@@ -262,20 +261,17 @@ class Validator:
                 entries.append(
                     {
                         "term": term,
-                        "reading": self.norm(row.get("reading")),
                         "slug_file": "g-dummy.html",
                     }
                 )
         term_lookup = make_term_lookup(entries)
-        seen: set[tuple[str, str]] = set()
+        seen: set[str] = set()
         for idx, row in enumerate(rows, start=2):
             term = self.require_text(path, row, idx, "term")
-            reading = self.require_text(path, row, idx, "reading")
             if term:
-                key = (term, reading)
-                if key in seen:
-                    self.error(path, idx, f"term + reading が重複しています: {term} / {reading}")
-                seen.add(key)
+                if term in seen:
+                    self.error(path, idx, f"term が重複しています: {term}")
+                seen.add(term)
             self.validate_category(path, row, idx)
             self.require_text(path, row, idx, "short_def")
             self.require_text(path, row, idx, "definition")
@@ -456,8 +452,8 @@ class Validator:
 
     def run(self) -> int:
         self.validate_past_questions()
-        self.validate_original_questions()
-        self.validate_ichimon()
+        self.validate_practice_questions()
+        self.validate_ichimon_questions()
         self.validate_glossary()
         self.validate_guide_articles()
 

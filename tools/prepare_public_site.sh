@@ -22,14 +22,13 @@ for f in \
   robots.txt \
   sitemap.xml \
   .nojekyll \
-  eisei1-master-data.js \
-  eisei1-data-glossary.js \
-  eisei1-data-original.js \
-  eisei1-data-ichimon.js
+  exam-site-data-past.js \
+  exam-site-data-practice.js \
+  exam-site-data-ichimondou.js
 do
   if [[ ! -e "$f" ]]; then
     echo "prepare_public_site.sh: 必須ファイルがありません: $f" >&2
-    echo "先に python3 tools/build_all.py を実行してください。" >&2
+    echo "先に python3 tools/csv_to_exam_site_past_js.py と各生成スクリプトを実行してください。" >&2
     exit 1
   fi
   cp "$f" "$OUT/"
@@ -41,12 +40,6 @@ for d in articles q terms; do
 done
 # サイト固有 SPA データ（eisei1 / eisei2 など）。無ければスキップ。
 for f in eisei1-*.js eisei2-*.js; do
-  if [[ -f "$ROOT/$f" ]]; then
-    cp "$ROOT/$f" "$OUT/"
-  fi
-done
-# 新テンプレート標準のデータファイルを持つサイトでは、あわせて公開する。
-for f in exam-site-data-*.js; do
   if [[ -f "$ROOT/$f" ]]; then
     cp "$ROOT/$f" "$OUT/"
   fi

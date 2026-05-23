@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""一問一答CSVの解説を、判定理由が伝わる文章へ再作成する。
+"""一問一答CSVの問題文・解説を整える。
 
-同じ設問から派生した5件を1グループとして扱い、○になる行との照合、
-組合せ・順序問題の差分、用語集の定義を使って解説を組み立てる。
+- 問題文: 文脈のない断片（「〜を防止する」だけ等）に親設問の論点を付与
+- 解説: 同じ設問から派生した5件を1グループとして○行と照合し、用語集定義で再作成
 """
 
 from __future__ import annotations
@@ -80,6 +80,10 @@ SPECIAL_TERMS = [
     "配管",
     "据付基礎",
 ]
+
+JUDGEMENT_TAIL_RE = re.compile(r"^(?P<prefix>.*?)「(?P<inner>.+)」という記述は(?P<label>正しい|誤っている)。$")
+DEVICE_HEAD_RE = re.compile(r"^(.{2,40}?)(は|が|には|では|も)(?=[^、。]{0,30}(?:である|ない|できる|される|という|もの|部分|装置|弁|計|方式|構造|作用|目的|理由|場合|とき))")
+METHOD_HINT_RE = re.compile(r"(方法|手段|手順|場合|とき|作用|目的|理由|順序|組合せ|条件|記述|装置|弁|計|バーナ|ポンプ|ドラム|室|器|トラップ|予熱器|節炭器|エコノマイザ|分離器|調節器|コントローラ|火格子|流動層|据付|検査|届出|選任|変更|設置|使用|廃止|再|除去|防止|抑制|調整|調節|燃焼|給水|排水|点火|たき上|停止|異常|故障|損傷|腐食|すす|灰分|水分|層内|排ガス|NOx|脱硫|伝熱|循環|圧力|水位|蒸気|温水|燃料|空気|法令|ボイラー)")
 
 
 def norm(text: str | None) -> str:
@@ -178,6 +182,139 @@ def ocr_focus(block: str) -> str:
     text = re.sub(r"として、?誤っているもの.*", "として誤っているもの", text)
     text = re.sub(r"の組合せは、?$", "", text)
     return text.rstrip("、。")
+
+
+def parse_judgement_question(question: str) -> tuple[str, str, str] | None:
+    m = JUDGEMENT_TAIL_RE.match(norm(question))
+    if not m:
+        return None
+    return m.group("prefix").strip(), m.group("inner"), m.group("label")
+
+
+def needs_context_prefix(inner: str, existing_prefix: str) -> bool:
+    if existing_prefix:
+        return False
+    inner = norm(inner)
+    if not inner:
+        return False
+    if re.match(r"^[^、。]{2,36}(は|が|には|では)", inner):
+        return False
+    if DEVICE_HEAD_RE.match(inner):
+        return False
+    if len(inner) >= 55 and re.search(r"(である|ない|できる|される|とい|こと|もので|部分|装置|とき|場合|方式|構造|範囲|効率)", inner):
+        return False
+    if re.search(
+        r"(する|させる|下げる|上げる|防止|向上|低下|用いる|行う|設ける|採用|変更|移動|保存|記録|届出|検査|排出|供給|混合|除去|抑制|閉じ|開く|取り替|加減|停止|確認|配管|連絡|損傷|変形|折損|焼損|上昇|増加|減少|付着|混入|閉そく|不完全|選び|除く|設置|廃止|再び|再使用|選任)$",
+        inner,
+    ):
+        return True
+    if len(inner) < 50 and not re.search(r"(である|ない|できる|される)", inner):
+        return True
+    return False
+
+
+def group_inners_and_labels(group_rows: list[dict[str, str]]) -> tuple[list[str], list[str], str]:
+    inners: list[str] = []
+    labels: list[str] = []
+    category = ""
+    for row in group_rows:
+        category = category or norm(row.get("category"))
+        parsed = parse_judgement_question(norm(row.get("question")))
+        if not parsed:
+            continue
+        _, inner, label = parsed
+        inners.append(inner)
+        labels.append(label)
+    return inners, labels, category
+
+
+def infer_group_prefix(group_rows: list[dict[str, str]], block: str) -> str:
+    focus = ocr_focus(block)
+    if focus:
+        return focus
+
+    inners, labels, category = group_inners_and_labels(group_rows)
+    if not inners:
+        return ""
+
+    joined = " ".join(inners)
+    unique_labels = set(labels)
+
+    if category == "関係法令":
+        if any("伝熱面積" in x or "電気ボイラー" in x or "貫流ボイラー" in x for x in inners):
+            return "第2種ボイラー技士を選任しなければならないボイラーとして"
+        if any("変更を加えた" in x for x in inners):
+            return "構造変更検査を要する場合として"
+        if any("使用の廃止" in x or "再び使用" in x or "再使用" in x for x in inners):
+            return "使用の廃止又は再使用の届出が必要な場合として"
+        if any("設置の届出" in x or "設置しよう" in x for x in inners):
+            return "ボイラーの設置届出が必要な場合として"
+        if any("検査" in x for x in inners) and any("保存" in x for x in inners):
+            return "検査関係書類の保存について"
+        if any("作業主任者" in x or "選任" in x for x in inners):
+            return "作業主任者の選任が必要な場合として"
+        if any("ボイラー室" in x or "ボイラー設置場所" in x for x in inners):
+            return "ボイラー室又は設置場所に関する規定として"
+        if any("移動式" in x for x in inners):
+            return "移動式ボイラーに関する規定として"
+        if unique_labels == {"正しい"}:
+            return "法令上の規定として正しいものは"
+
+    keyword_focus = [
+        (("低水位事故", "低水位"), "低水位燃焼防止装置の作用"),
+        (("戻り油式", "プランジャ式", "ノズルチップ", "バーナの数"), "燃焼量の広い調節範囲を確保する方法"),
+        (("たき始め", "点火後", "空気抜き弁", "圧力計の指針"), "ボイラーのたき始めの手順"),
+        (("満水保存", "乾燥保存", "凍結"), "ボイラーの保存方法"),
+        (("吹出し", "給水温度が低下", "給水内管", "水面計が閉そく"), "ボイラー水位が異常に上昇した原因"),
+        (("主蒸気弁を急開", "燃焼量を下げ", "水質試験"), "ボイラー内圧力が異常に上昇したときの対処"),
+        (("バイメタル", "電磁コイル", "弁座", "弁棒"), "安全弁が作動しない原因"),
+        (("すすの付着", "酸消費量", "亜硫酸"), "ボイラー運転中の内部処理"),
+        (("エコノマイザ", "空気予熱器", "節炭器"), "エコノマイザ又は空気予熱器の効果"),
+        (("自然循環式水管", "強制循環式", "貫流ボイラー", "二胴形"), "水管ボイラーの形式"),
+        (("温度調節器", "感温体", "シリコングリス"), "温度調節器の取付"),
+        (("主蒸気弁", "減圧弁", "気水分離器", "蒸気トラップ", "伸縮継手"), "蒸気配管の附属装置"),
+        (("比例動作", "積分動作", "微分動作"), "自動制御の動作"),
+        (("流量計", "水面計", "二色水面計"), "計測器の原理"),
+        (("流動層", "石灰石", "炉内脱硫"), "流動層燃焼装置の特徴"),
+        (("NOx", "すす", "遊離炭素"), "燃焼生成物"),
+        (("重油", "灯油", "LPG", "都市ガス", "発熱量"), "燃料の性質"),
+        (("過剰空気", "完全燃焼", "すす及びダスト"), "低酸素燃焼の特徴"),
+        (("灰分", "スラッジ", "残留炭素"), "固体燃料の性質"),
+    ]
+    for keys, phrase in keyword_focus:
+        if any(any(k in inner for k in keys) for inner in inners):
+            return phrase + "として"
+
+    for inner in sorted(inners, key=len, reverse=True):
+        m = DEVICE_HEAD_RE.match(inner)
+        if m and len(m.group(1)) >= 3:
+            head = m.group(1)
+            if head not in {"次の", "以下の", "この", "その"}:
+                return head + "に関する記述"
+
+    if unique_labels == {"誤っている"}:
+        return "次の記述のうち誤っているものとして"
+    if unique_labels == {"正しい"}:
+        return "次の記述のうち正しいものとして"
+    return "次の記述として"
+
+
+def apply_group_context_prefix(group_rows: list[dict[str, str]], prefix: str) -> int:
+    if not prefix:
+        return 0
+    changed = 0
+    prefix = prefix.rstrip("、。")
+    for row in group_rows:
+        question = norm(row.get("question"))
+        parsed = parse_judgement_question(question)
+        if not parsed:
+            continue
+        existing_prefix, inner, label = parsed
+        if not needs_context_prefix(inner, existing_prefix):
+            continue
+        row["question"] = f"{prefix}、「{inner}」という記述は{label}。"
+        changed += 1
+    return changed
 
 
 def ocr_letter_map(block: str) -> dict[str, str]:
@@ -522,6 +659,13 @@ def main() -> int:
         rewrite_question(row, ocr_contexts)
         groups[group_key(row["id"])].append(row)
 
+    context_changed = 0
+    for key, group in groups.items():
+        exam, qno, _ = key.split("-", 2) if key.count("-") >= 2 else (key, "0", "0")
+        block = ocr_contexts.get(exam, {}).get(int(qno), "")
+        prefix = infer_group_prefix(group, block)
+        context_changed += apply_group_context_prefix(group, prefix)
+
     term_counter: Counter[str] = Counter()
     no_term = 0
     for group in groups.values():
@@ -552,6 +696,7 @@ def main() -> int:
 
     print(f"rewrote rows: {len(rows)}")
     print(f"groups checked: {len(groups)}")
+    print(f"questions with context prefix added: {context_changed}")
     print(f"rows with glossary/source terms: {len(rows) - no_term}")
     print(f"rows using category-level reason: {no_term}")
     print("top matched terms:", ", ".join(f"{term}:{count}" for term, count in term_counter.most_common(10)))
