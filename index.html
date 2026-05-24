@@ -86,7 +86,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="site-theme.css?v=1be2997e8b6b">
+<link rel="stylesheet" href="site-theme.css?v=c12eac4cc3a1">
 <style>
 :root {
   --bg:    #ffffff;
@@ -1958,12 +1958,12 @@ body.is-solving .site-footer{display:none!important}
     </footer>
 </div>
 
-<script src="site-config.js?v=1be2997e8b6b"></script>
-<script src="site-spa-fields.js?v=1be2997e8b6b"></script>
-<script defer src="eisei1-data-glossary.js?v=1be2997e8b6b"></script>
-<script defer src="eisei1-data-original.js?v=1be2997e8b6b"></script>
-<script defer src="eisei1-master-data.js?v=1be2997e8b6b"></script>
-<script defer src="eisei1-data-ichimon.js?v=1be2997e8b6b"></script>
+<script src="site-config.js?v=c12eac4cc3a1"></script>
+<script src="site-spa-fields.js?v=c12eac4cc3a1"></script>
+<script defer src="eisei1-data-glossary.js?v=c12eac4cc3a1"></script>
+<script defer src="eisei1-data-original.js?v=c12eac4cc3a1"></script>
+<script defer src="eisei1-master-data.js?v=c12eac4cc3a1"></script>
+<script defer src="eisei1-data-ichimon.js?v=c12eac4cc3a1"></script>
 <script>
 
 function enrichGlossaryPlaceholderDesc(){
@@ -2319,8 +2319,8 @@ function getLevelNext(totalAnswered){
   return LEVELS.find(l=>l.lv===cur.lv+1)||null;
 }
 
-// --- Badge definitions ---
-const BADGE_DEFS = [
+// --- Badge definitions（分野別は FIELDS 読込後に rebuildBadgeDefs で追加）---
+const BADGE_DEFS_STATIC = [
   {id:'first_answer',   icon:'play',     name:'はじめの一問',      desc:'初めて1問解答'},
   {id:'first_correct',  icon:'check',    name:'初正解',            desc:'初めて正解'},
   {id:'total10',        icon:'stack',    name:'10問達成',          desc:'累計10問解答'},
@@ -2345,8 +2345,15 @@ const BADGE_DEFS = [
   {id:'bookmark_action',icon:'bookmark', name:'ブックマークを押す',desc:'気になる問題をブックマーク'},
   {id:'timer_action',   icon:'timer',    name:'タイマーを使う',    desc:'集中タイマーを開いて学習準備'},
   {id:'all_fields',     icon:'grid',     name:'全分野タッチ',      desc:'全分野で1問以上正解'},
-  ...FIELDS.map(f => ({id:`field_master_${f.id}`, icon:'book', name:`${f.name} 得意`, desc:`${f.name}10問以上・正答率70%以上`, field:f.id})),
 ];
+let BADGE_DEFS = BADGE_DEFS_STATIC.slice();
+function rebuildBadgeDefs(){
+  const fieldBadges=(typeof FIELDS!=='undefined'&&Array.isArray(FIELDS))
+    ? FIELDS.map(f=>({id:`field_master_${f.id}`,icon:'book',name:`${f.name} 得意`,desc:`${f.name}10問以上・正答率70%以上`,field:f.id}))
+    : [];
+  BADGE_DEFS=BADGE_DEFS_STATIC.concat(fieldBadges);
+}
+rebuildBadgeDefs();
 
 function badgeIconHTML(icon){
   const paths = {
@@ -2644,7 +2651,7 @@ function getFeedbackMsg(correct, streak){
 // --- Mission definitions (40 mission templates, picked by date hash) ---
 // ミッションは4カテゴリに分類し、毎日1つずつ異なるカテゴリから選ぶ
 // → 同一分野の重複なし、毎日バランスの取れた3ミッション
-const MISSION_POOL = {
+const MISSION_POOL_ABD = {
   // カテゴリA: 解答数系
   A: [
     {id:'solve1',   text:'まず1問解こう',     type:'solve', target:1},
@@ -2671,18 +2678,23 @@ const MISSION_POOL = {
     {id:'orig3',    text:'実践演習を3問解こう',  type:'mode', mode:'orig', target:3},
     {id:'review_any1', text:'復習を1問進めよう',       type:'review', target:1},
   ],
-  // カテゴリC: 分野系（site-config.json の fields から生成）
-  C: [
-    ...FIELDS.flatMap(f => [1,2,3,4].map(n => ({id:`field_${f.id}_${n}`, text:`${f.name}を${n}問解こう`, type:'field', field:f.id, target:n}))),
-    {id:'past1',    text:'過去問を1問解こう',      type:'mode',  mode:'past',    target:1},
-    {id:'past3',    text:'過去問を3問解こう',      type:'mode',  mode:'past',    target:3},
-  ],
   // カテゴリD: 復習系
   D: [
     {id:'review1',  text:'復習を1問進めよう',         type:'review', target:1},
     {id:'review2',  text:'復習を2問進めよう',         type:'review', target:2},
   ],
 };
+function getMissionPoolCatC(){
+  const pastMissions=[
+    {id:'past1', text:'過去問を1問解こう', type:'mode', mode:'past', target:1},
+    {id:'past3', text:'過去問を3問解こう', type:'mode', mode:'past', target:3},
+  ];
+  if(typeof FIELDS==='undefined'||!Array.isArray(FIELDS)||!FIELDS.length) return pastMissions;
+  return FIELDS.flatMap(f=>[1,2,3,4].map(n=>({id:`field_${f.id}_${n}`,text:`${f.name}を${n}問解こう`,type:'field',field:f.id,target:n}))).concat(pastMissions);
+}
+function getMissionPool(){
+  return {A:MISSION_POOL_ABD.A,B:MISSION_POOL_ABD.B,C:getMissionPoolCatC(),D:MISSION_POOL_ABD.D};
+}
 
 function getTodayMissions(){
   const today=new Date();
@@ -2698,7 +2710,7 @@ function getTodayMissions(){
   const useCats=cats.filter((_,i)=>i!==skipIdx);
   // 各カテゴリから1つ選ぶ
   return useCats.map(cat=>{
-    const pool=MISSION_POOL[cat];
+    const pool=getMissionPool()[cat];
     return pool[rng()%pool.length];
   });
 }
@@ -6943,6 +6955,7 @@ function closePremium(){document.getElementById('premium-modal').classList.remov
 function mockUpgrade(){const u=getUserData();u.plan='premium';saveUser(u);closePremium();gotoPage('dash')}
 
 function syncSpaStateFromConfig(){
+  rebuildBadgeDefs();
   if(typeof FIELDS!=='undefined'&&Array.isArray(FIELDS)&&FIELDS.length){
     const ids=FIELDS.map(function(f){return f.id;});
     quizState.fields=ids;
@@ -6985,6 +6998,7 @@ function spaBootstrapAfterData(){
       enterApp();
     }
   })();
+  try{ window.dispatchEvent(new Event('spa-ready')); }catch(_e){}
 }
 document.addEventListener('DOMContentLoaded',spaBootstrapAfterData);
 // 用語ページが表示されたまま JS の初期化順で一覧が描画されなかった場合の再試行
@@ -7855,17 +7869,22 @@ function init(){
   }
 }
 
-// getUserData が利用可能になってから初期化
-if(typeof getUserData==='function'){
+function runEnhancementInit(){
+  if(typeof getUserData!=='function'||typeof gotoPage!=='function'){
+    setTimeout(runEnhancementInit,50);
+    return;
+  }
   init();
-} else {
-  setTimeout(init,400);
 }
+window.addEventListener('spa-ready',runEnhancementInit);
+document.addEventListener('DOMContentLoaded',function(){
+  setTimeout(runEnhancementInit,0);
+});
 
 })();
 </script>
 <!-- GA4: tools/html_footer.analytics_snippet と同内容（トップ SPA） -->
 <script>window.__GA4_MEASUREMENT_ID__="G-0J1YS1XD2K";</script>
-<script defer src="site-analytics.js?v=1be2997e8b6b"></script>
+<script defer src="site-analytics.js?v=c12eac4cc3a1"></script>
 </body>
 </html>
