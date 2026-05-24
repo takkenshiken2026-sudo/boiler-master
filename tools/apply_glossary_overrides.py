@@ -12,9 +12,11 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from tools.deepen_glossary_articles import build_example_qa
 from tools.glossary_article_overrides import ARTICLE_OVERRIDES
+from tools.glossary_comparison_registry import comparison_for_term
 from tools.internal_links import norm
-from tools.rewrite_glossary_articles import GLOSSARY_CSV, GLOSSARY_FIELDNAMES
+from tools.rewrite_glossary_articles import GLOSSARY_CSV, GLOSSARY_FIELDNAMES, term_kind
 
 OVERRIDE_FIELDS = (
     "article_title",
@@ -53,6 +55,19 @@ def main() -> int:
         for key, val in patch.items():
             if key in OVERRIDE_FIELDS or key in fieldnames:
                 row[key] = val
+        cmp_html = norm(row.get("comparison_html")) or comparison_for_term(term)
+        if cmp_html:
+            row["comparison_html"] = cmp_html
+        if not norm(row.get("example_question")):
+            kind = term_kind(term, norm(row.get("category")))
+            q, a = build_example_qa(
+                term,
+                norm(row.get("short_def")),
+                norm(row.get("definition")),
+                kind,
+            )
+            row["example_question"] = q
+            row["example_answer"] = a
         applied += 1
 
     with GLOSSARY_CSV.open("w", encoding="utf-8", newline="") as f:

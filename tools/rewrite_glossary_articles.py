@@ -56,6 +56,8 @@ GLOSSARY_FIELDNAMES = [
     "faq_2_answer",
     "faq_3_question",
     "faq_3_answer",
+    "faq_4_question",
+    "faq_4_answer",
     "comparison_html",
 ]
 

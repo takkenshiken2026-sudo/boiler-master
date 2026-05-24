@@ -565,7 +565,7 @@ def faq_section_html(items: list[dict[str, str]]) -> str:
 
 def custom_faq_items(entry: dict, fallback: list[dict[str, str]]) -> list[dict[str, str]]:
     items: list[dict[str, str]] = []
-    for idx in range(1, 4):
+    for idx in range(1, 5):
         q = norm(entry.get(f"faq_{idx}_question"))
         a = norm(entry.get(f"faq_{idx}_answer"))
         if q and a:
@@ -607,6 +607,7 @@ def build_term_html(
     memory_tip = norm(entry.get("memory_tip"))
     example_question = norm(entry.get("example_question"))
     example_answer = norm(entry.get("example_answer"))
+    comparison_html = norm(entry.get("comparison_html"))
 
     title = f"{article_title or term + 'とは？意味・根拠・試験ポイント'}｜{brand_name()}"
     desc = meta_description(
@@ -686,8 +687,17 @@ def build_term_html(
     elif points:
         points_html = '<ol class="term-point-list">' + "".join(f"<li>{html.escape(p)}</li>" for p in points) + "</ol>"
     detail_html = text_paragraphs(term_detail_body or definition)
-    mistakes_html = text_paragraphs(common_mistakes)
-    memory_html = f"<blockquote><p>{html.escape(memory_tip)}</p></blockquote>" if memory_tip else ""
+    if common_mistakes:
+        mistakes_html = (
+            semicolon_list_html(common_mistakes)
+            if ";" in common_mistakes
+            else text_paragraphs(common_mistakes)
+        )
+    else:
+        mistakes_html = ""
+    memory_html = (
+        f"<blockquote>{text_paragraphs(memory_tip)}</blockquote>" if memory_tip else ""
+    )
     example_html = ""
     if example_question or example_answer:
         example_html = (
@@ -765,10 +775,12 @@ def build_term_html(
 
     content_sections: list[str] = []
     body_toc_items: list[tuple[str, str]] = []
+    comparison_section_html = comparison_html.strip()
     for sec_id, label, body_html in [
         ("summary", "まず押さえる要点", text_paragraphs(short_def)),
         ("points", "試験で押さえるポイント", points_html),
         ("definition", "定義と基本理解", detail_html),
+        ("compare", "比較・整理表", comparison_section_html),
         ("legal", "法令・根拠", legal_basis_html(legal)),
         ("exam", "選択肢で問われやすい点", text_paragraphs(explanation)),
         ("mistakes", "よくある誤解・注意点", mistakes_html),
@@ -1261,12 +1273,15 @@ def main() -> int:
                 "memory_tip": norm(row.get("memory_tip")),
                 "example_question": norm(row.get("example_question")),
                 "example_answer": norm(row.get("example_answer")),
+                "comparison_html": norm(row.get("comparison_html")),
                 "faq_1_question": norm(row.get("faq_1_question")),
                 "faq_1_answer": norm(row.get("faq_1_answer")),
                 "faq_2_question": norm(row.get("faq_2_question")),
                 "faq_2_answer": norm(row.get("faq_2_answer")),
                 "faq_3_question": norm(row.get("faq_3_question")),
                 "faq_3_answer": norm(row.get("faq_3_answer")),
+                "faq_4_question": norm(row.get("faq_4_question")),
+                "faq_4_answer": norm(row.get("faq_4_answer")),
                 "slug_file": slug_file,
                 "field_hub": field_hub_slug(norm(row.get("category"))),
             }
