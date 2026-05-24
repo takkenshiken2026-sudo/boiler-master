@@ -1,0 +1,54 @@
+# Cloudflare Pages / Netlify 向け（GitHub Pages 単体では無効）。
+# GitHub Pages + Cloudflare プロキシの場合はダッシュボードで Cache Rule を設定してください。
+# ビルド時に tools/inject_asset_cache_bust.py が ?v= を付与します。
+
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/articles/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/q/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/terms/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/about.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/privacy.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/related-sites.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/site-theme.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/site-pages.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/site-config.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/site-analytics.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/site-spa-fields.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/site-q-index.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/site-terms-index.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/eisei1-*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/exam-site-data-*.js
+  Cache-Control: public, max-age=31536000, immutable

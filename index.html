@@ -86,6 +86,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site-theme.css?v=89d637724bb3">
 <style>
 :root {
   --bg:    #ffffff;
@@ -1957,74 +1958,10 @@ body.is-solving .site-footer{display:none!important}
     </footer>
 </div>
 
-<script src="site-config.js"></script>
-<!-- CSV 取り込みデータを QUESTIONS 等へ反映する（eisei1-master-data.js の末尾から呼ばれる） -->
-<script>
-var SITE_CONFIG = window.SITE_CONFIG || {};
-var FIELDS = (Array.isArray(SITE_CONFIG.fields) && SITE_CONFIG.fields.length)
-  ? SITE_CONFIG.fields.map(function(f){
-      return {
-        id: String(f.id),
-        name: String(f.name || f.id),
-        aliases: Array.isArray(f.aliases) ? f.aliases.map(String) : [],
-        legacyGlossaryCat: String(f.legacyGlossaryCat || f.id)
-      };
-    })
-  : [
-      { id: 'law', name: '法令・制度', aliases:['法令・制度','関連法令'], legacyGlossaryCat:'lawN' },
-      { id: 'rights', name: '契約・実務', aliases:['契約・実務','実務'], legacyGlossaryCat:'rightsN' },
-      { id: 'limit', name: '設備・その他', aliases:['設備・その他','その他'], legacyGlossaryCat:'limit' }
-    ];
-function getFieldLabel(fieldId){
-  var f = FIELDS.find(function(x){ return x.id === fieldId; });
-  return f ? f.name : (fieldId || '—');
-}
-function getFieldIds(){ return FIELDS.map(function(f){ return f.id; }); }
-function buildEvenFieldDistribution(total){
-  var ids = getFieldIds();
-  var dist = {};
-  if(!ids.length) return dist;
-  ids.forEach(function(id, idx){ dist[id] = Math.floor(total / ids.length) + (idx < (total % ids.length) ? 1 : 0); });
-  return dist;
-}
-function getGlossaryCatDefs(){
-  return [{id:'all',label:'すべて',title:'すべて'}].concat(FIELDS.map(function(f){
-    return { id:f.legacyGlossaryCat || f.id, label:f.name, title:f.name };
-  }));
-}
-function glossaryCatFromName(name){
-  var n = String(name || '').trim();
-  for(var i=0;i<FIELDS.length;i++){
-    var f = FIELDS[i];
-    var names = [f.name].concat(f.aliases || []);
-    if(names.indexOf(n) !== -1) return f.legacyGlossaryCat || f.id;
-  }
-  return FIELDS[0] ? (FIELDS[0].legacyGlossaryCat || FIELDS[0].id) : 'all';
-}
-function applyCsvImportedQuestions() {
-  if (typeof CSV_IMPORTED_QUESTIONS === 'undefined' || !Array.isArray(CSV_IMPORTED_QUESTIONS)) return;
-  var rows = CSV_IMPORTED_QUESTIONS;
-  var origSet = (typeof CSV_IMPORTED_ORIG_POOL_YEARS !== 'undefined' && Array.isArray(CSV_IMPORTED_ORIG_POOL_YEARS))
-    ? new Set(CSV_IMPORTED_ORIG_POOL_YEARS) : new Set();
-  BASE_QUESTIONS = rows.filter(function (q) {
-    return q && q.year != null && q.year !== '' && !origSet.has(q.year);
-  });
-  QUESTIONS = rows.slice();
-  var yset = new Set();
-  BASE_QUESTIONS.forEach(function (q) {
-    if (q.year != null && q.year !== '') yset.add(q.year);
-  });
-  YEARS = Array.from(yset).sort(function (a, b) { return b - a; });
-}
-</script>
-<link rel="stylesheet" href="site-theme.css">
-<script src="eisei1-data-glossary.js"></script>
-<script src="eisei1-data-original.js"></script>
-<script src="eisei1-master-data.js"></script>
-<script src="eisei1-data-ichimon.js"></script>
+<script defer src="site-spa-load-data.js?v=89d637724bb3"></script>
 <script>
 
-(function enrichGlossaryPlaceholderDesc(){
+function enrichGlossaryPlaceholderDesc(){
   const PLACEHOLDER_SNIPPET='試験の頻出論点です。定義・比較表・具体例を公開サイトの解説記事で詳しく確認できます。';
   const CAT_HINT={
     lawH:'法令・制度・登録・遵守事項・監督処分など、学習者の義務と手続を整理します。',
@@ -2054,7 +1991,7 @@ function applyCsvImportedQuestions() {
       '※カードを開くと、データがある項目は表・比較・フローなどの図解が表示されます。'
     ].join('\n');
   });
-})();
+}
 
 // ===== GLOSSARY UI（既定: eisei1-data-glossary.js。成功時は docs/glossary-terms-checklist.csv で上書き）=====
 let glosActiveCat = 'all';
@@ -7000,16 +6937,55 @@ function openPremium(){document.getElementById('premium-modal').classList.add('o
 function closePremium(){document.getElementById('premium-modal').classList.remove('open')}
 function mockUpgrade(){const u=getUserData();u.plan='premium';saveUser(u);closePremium();gotoPage('dash')}
 
-loadDB();
-// ゲストとしてまず入場
-(function(){
-  const guestEmail='__guest__';
-  if(!db[guestEmail]){db[guestEmail]={name:'ゲスト',plan:'free',answers:{},sessions:[],streak:0};saveDB();}
-  currentUser={email:guestEmail,name:'ゲスト'};
-  enterApp();
-  renderOrigPage();
-  gotoPage('quiz-start');
-})();
+function spaBootstrapAfterData(){
+  enrichGlossaryPlaceholderDesc();
+  loadDB();
+  // ゲストとしてまず入場
+  (function(){
+    const guestEmail='__guest__';
+    if(!db[guestEmail]){db[guestEmail]={name:'ゲスト',plan:'free',answers:{},sessions:[],streak:0};saveDB();}
+    currentUser={email:guestEmail,name:'ゲスト'};
+    enterApp();
+    renderOrigPage();
+    gotoPage('quiz-start');
+  })();
+  // Supabaseセッションがあればログイン済みユーザーに切り替え
+  (async function(){
+    const session = _sb ? (await _sb.auth.getSession()).data.session : null;
+    const hash = location.hash || '';
+    if(hash.includes('type=recovery') || hash.includes('access_token=')){
+      showPasswordResetForm();
+    }
+    if(session){
+      const e=session.user.email;
+      const u=normalizeUserData(db[e]||{name:e,plan:'free',answers:{},sessions:[],bookmarks:{},streak:0});
+      if(!db[e]){db[e]=u;saveDB();}
+      currentUser={id:session.user.id,email:e,name:u.name};
+      await loadAnswersFromSupabase();
+      await loadMergeUserLearningSyncFromSupabase();
+      await syncUserLearningToSupabaseNow();
+      enterApp();
+    }
+  })();
+}
+function spaStartWhenReady(){
+  var run=function(){
+    if(typeof loadSpaDataAssets==='function'){
+      loadSpaDataAssets().then(spaBootstrapAfterData).catch(function(err){
+        console.error('[spa] data load failed',err);
+        spaBootstrapAfterData();
+      });
+    }else{
+      spaBootstrapAfterData();
+    }
+  };
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',run);
+  }else{
+    run();
+  }
+}
+spaStartWhenReady();
 // 用語ページが表示されたまま JS の初期化順で一覧が描画されなかった場合の再試行
 window.addEventListener('load', function(){
   var gp = document.getElementById('page-glossary');
@@ -7020,24 +6996,6 @@ window.addEventListener('load', function(){
     renderGlossary();
   }
 });
-// Supabaseセッションがあればログイン済みユーザーに切り替え
-(async function(){
-  const session = _sb ? (await _sb.auth.getSession()).data.session : null;
-  const hash = location.hash || '';
-  if(hash.includes('type=recovery') || hash.includes('access_token=')){
-    showPasswordResetForm();
-  }
-  if(session){
-    const e=session.user.email;
-    const u=normalizeUserData(db[e]||{name:e,plan:'free',answers:{},sessions:[],bookmarks:{},streak:0});
-    if(!db[e]){db[e]=u;saveDB();}
-    currentUser={id:session.user.id,email:e,name:u.name};
-    await loadAnswersFromSupabase();
-    await loadMergeUserLearningSyncFromSupabase();
-    await syncUserLearningToSupabaseNow();
-    enterApp();
-  }
-})();
 // ===== EXAM COUNTDOWN =====
 (function(){
   const DAILY_MSGS = [
@@ -7074,7 +7032,6 @@ window.addEventListener('load', function(){
   ];
   // 試験日は地域等で異なるため、日数カウント表示は廃止
 })();
-
 </script>
 <!-- MISSION COMPLETE POPUP -->
 <div class="mission-popup-overlay" id="mission-popup-overlay" onclick="closeMissionPopup(event)">
@@ -7908,6 +7865,6 @@ if(typeof getUserData==='function'){
 </script>
 <!-- GA4: tools/html_footer.analytics_snippet と同内容（トップ SPA） -->
 <script>window.__GA4_MEASUREMENT_ID__="G-0J1YS1XD2K";</script>
-<script defer src="site-analytics.js"></script>
+<script defer src="site-analytics.js?v=89d637724bb3"></script>
 </body>
 </html>
