@@ -86,7 +86,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="site-theme.css?v=89d637724bb3">
+<link rel="stylesheet" href="site-theme.css?v=1be2997e8b6b">
 <style>
 :root {
   --bg:    #ffffff;
@@ -1958,7 +1958,12 @@ body.is-solving .site-footer{display:none!important}
     </footer>
 </div>
 
-<script defer src="site-spa-load-data.js?v=89d637724bb3"></script>
+<script src="site-config.js?v=1be2997e8b6b"></script>
+<script src="site-spa-fields.js?v=1be2997e8b6b"></script>
+<script defer src="eisei1-data-glossary.js?v=1be2997e8b6b"></script>
+<script defer src="eisei1-data-original.js?v=1be2997e8b6b"></script>
+<script defer src="eisei1-master-data.js?v=1be2997e8b6b"></script>
+<script defer src="eisei1-data-ichimon.js?v=1be2997e8b6b"></script>
 <script>
 
 function enrichGlossaryPlaceholderDesc(){
@@ -3102,7 +3107,7 @@ function buildYearHistoryHTML(q){
 
 // ===== STATE =====
 let currentUser = null, db = {};
-let quizState = {mode:'past',fields:FIELDS.map(f=>f.id),years:[...YEARS],count:10,order:'seq',queue:[],idx:0,startTime:0,sessionResults:[],scoreReplayMode:false};
+let quizState = {mode:'past',fields:[],years:[],count:10,order:'seq',queue:[],idx:0,startTime:0,sessionResults:[],scoreReplayMode:false};
 
 // Storage: localStorage (works in real browsers / GitHub Pages)
 var _memStore = {};
@@ -3635,7 +3640,7 @@ function _updatePageMeta(id) {
 
 
 // ===== 一問一答 =====
-const FIELD_LABELS = Object.fromEntries(FIELDS.map(f => [f.id, f.name]));
+let FIELD_LABELS = {};
 let ichiState = {
   sourcePool: [],
   questions: [],
@@ -4626,11 +4631,11 @@ const ORIG_UNITS = {
     {id:'c_phys',label:'PM/AM・賃貸経営'},
   ],
 };
-const ORIG_FIELD_LABELS = Object.fromEntries(FIELDS.map(f => [f.id, f.name]));
+let ORIG_FIELD_LABELS = {};
 const ORIG_FIELD_COLORS = {law:'#1e4a8a', rights:'#1a5f4a', limit:'#8a5a1e'};
 
 
-let origState = {fields: getFieldIds(), count: 10};
+let origState = {fields: [], count: 10};
 function buildOrigFieldChips(){
   const el=document.getElementById('orig-field-chips');
   if(!el)return;
@@ -6937,7 +6942,20 @@ function openPremium(){document.getElementById('premium-modal').classList.add('o
 function closePremium(){document.getElementById('premium-modal').classList.remove('open')}
 function mockUpgrade(){const u=getUserData();u.plan='premium';saveUser(u);closePremium();gotoPage('dash')}
 
+function syncSpaStateFromConfig(){
+  if(typeof FIELDS!=='undefined'&&Array.isArray(FIELDS)&&FIELDS.length){
+    const ids=FIELDS.map(function(f){return f.id;});
+    quizState.fields=ids;
+    FIELD_LABELS=Object.fromEntries(FIELDS.map(function(f){return [f.id,f.name];}));
+    ORIG_FIELD_LABELS=Object.fromEntries(FIELDS.map(function(f){return [f.id,f.name];}));
+    origState.fields=getFieldIds();
+  }
+  if(typeof YEARS!=='undefined'&&Array.isArray(YEARS)&&YEARS.length){
+    quizState.years=YEARS.slice();
+  }
+}
 function spaBootstrapAfterData(){
+  syncSpaStateFromConfig();
   enrichGlossaryPlaceholderDesc();
   loadDB();
   // ゲストとしてまず入場
@@ -6968,24 +6986,7 @@ function spaBootstrapAfterData(){
     }
   })();
 }
-function spaStartWhenReady(){
-  var run=function(){
-    if(typeof loadSpaDataAssets==='function'){
-      loadSpaDataAssets().then(spaBootstrapAfterData).catch(function(err){
-        console.error('[spa] data load failed',err);
-        spaBootstrapAfterData();
-      });
-    }else{
-      spaBootstrapAfterData();
-    }
-  };
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',run);
-  }else{
-    run();
-  }
-}
-spaStartWhenReady();
+document.addEventListener('DOMContentLoaded',spaBootstrapAfterData);
 // 用語ページが表示されたまま JS の初期化順で一覧が描画されなかった場合の再試行
 window.addEventListener('load', function(){
   var gp = document.getElementById('page-glossary');
@@ -7865,6 +7866,6 @@ if(typeof getUserData==='function'){
 </script>
 <!-- GA4: tools/html_footer.analytics_snippet と同内容（トップ SPA） -->
 <script>window.__GA4_MEASUREMENT_ID__="G-0J1YS1XD2K";</script>
-<script defer src="site-analytics.js?v=89d637724bb3"></script>
+<script defer src="site-analytics.js?v=1be2997e8b6b"></script>
 </body>
 </html>
