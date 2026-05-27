@@ -25,11 +25,12 @@ from tools.site_config import (
     exam_name,
     fields,
     ga4_measurement_id,
+    learning_nav_label,
     official_organization,
     primary_external_link,
     sync_config_files,
 )
-from tools.html_footer import site_page_footer, site_page_header
+from tools.html_footer import site_page_footer, site_page_header, site_shell_footer
 
 TEXT_TARGETS = [
     ROOT / "index.html",
@@ -280,6 +281,7 @@ def replace_all(text: str) -> str:
     origin = clean_origin()
     host = origin.replace("https://", "").replace("http://", "").strip("/")
     official = primary_external_link()
+    orig_nav_label = learning_nav_label("tnav-orig", "実践演習")
     replacements = [
         ("© 2026 Sampleマスター学習支援・YOUR-DOMAIN.example", copyright_text()),
         ("Sampleマスター", brand_name()),
@@ -289,24 +291,38 @@ def replace_all(text: str) -> str:
         ("https://example.com/contact", contact_url()),
         ("window.__GA4_MEASUREMENT_ID__=\"\"", f'window.__GA4_MEASUREMENT_ID__="{ga4_measurement_id()}"'),
         ('var DEFAULT_MID = "";', f'var DEFAULT_MID = "{ga4_measurement_id()}";'),
-        (">オリジナル問題<", ">実践演習<"),
-        ("オリジナル演習", "実践演習"),
-        ("単元別問題データ", "実践演習データ"),
         ("一般社団法人 試験実施団体", official_organization()),
         ("試験実施団体（試験・登録の公式）", official.get("label", official_organization())),
         ("https://example.com/", official.get("url", "https://example.com/")),
     ]
+    if orig_nav_label == "実践演習":
+        replacements.extend(
+            [
+                ("オリジナル問題", "実践演習"),
+                ("オリジナル演習", "実践演習"),
+                ("単元別問題データ", "実践演習データ"),
+            ]
+        )
     if exam_name() != "◯◯試験（プレースホルダー）":
         replacements.append(("◯◯試験", exam_name()))
     for src, dst in replacements:
         text = text.replace(src, dst)
 
     marker = '<script src="./site-config.js"></script>'
-    if (ROOT / "index.html").name and marker not in text and "<head>" in text and "site-analytics.js" in text:
-        text = text.replace(
-            '<script defer src="./site-analytics.js"></script>',
-            marker + '\n<script defer src="./site-analytics.js"></script>',
-        )
+    if "site-config.js" not in text and "site-analytics.js" in text:
+        for old, new_block in (
+            (
+                '<script defer src="./site-analytics.js"></script>',
+                marker + '\n<script defer src="./site-analytics.js"></script>',
+            ),
+            (
+                '<script defer src="site-analytics.js"></script>',
+                '<script src="site-config.js"></script>\n<script defer src="site-analytics.js"></script>',
+            ),
+        ):
+            if old in text:
+                text = text.replace(old, new_block, 1)
+                break
     return text
 
 
@@ -338,14 +354,14 @@ def replace_static_chrome(text: str, path: Path) -> str:
         return text
     rel_path = path.relative_to(ROOT)
     text = re.sub(
-        r'\s*<header class="site-page-header(?: site-page-header--wide)?">.*?</header>',
+        r'\s*<header class="(?:site-page-header(?: site-page-header--wide)?|topnav site-shell-header(?: site-shell-header--wide)?)">.*?</header>',
         "\n" + site_page_header(rel_path, current=current),
         text,
         count=1,
         flags=re.S,
     )
     text = re.sub(
-        r'\s*<footer class="site-page-footer(?: site-page-footer--wide)?">.*?</footer>\s*(?:<!-- GA4:.*?-->\s*)?(?:<script>window\.__GA4_MEASUREMENT_ID__="[^"]*";</script>\s*)?(?:<script defer src="[^"]*site-analytics\.js"></script>\s*)?',
+        r'\s*<footer class="(?:site-page-footer(?: site-page-footer--wide)?|site-footer)[^"]*".*?</footer>\s*(?:<!-- GA4:.*?-->\s*)?(?:<script>window\.__GA4_MEASUREMENT_ID__="[^"]*";</script>\s*)?(?:<script defer src="[^"]*site-analytics\.js"></script>\s*)?',
         "\n" + site_page_footer(rel_path, current=current),
         text,
         count=1,
@@ -365,40 +381,59 @@ def replace_static_chrome(text: str, path: Path) -> str:
 def ensure_index_theme(text: str) -> str:
     if "site-theme.css" in text:
         return text
-    if '<script src="site-config.js"></script>' in text:
-        return text.replace(
-            '<script src="site-config.js"></script>',
-            '<link rel="stylesheet" href="site-theme.css">\n<script src="site-config.js"></script>',
-            1,
-        )
-    if '<script src="./site-config.js"></script>' in text:
-        return text.replace(
-            '<script src="./site-config.js"></script>',
-            '<link rel="stylesheet" href="./site-theme.css">\n  <script src="./site-config.js"></script>',
-            1,
-        )
+    theme_link = '<link rel="stylesheet" href="site-theme.css">'
+    for needle, repl in (
+        ('<script src="site-config.js"></script>', theme_link + '\n<script src="site-config.js"></script>'),
+        ('<script src="./site-config.js"></script>', theme_link + '\n  <script src="./site-config.js"></script>'),
+        ('<script defer src="site-analytics.js"></script>', theme_link + '\n<script defer src="site-analytics.js"></script>'),
+        (
+            '<script defer src="./site-analytics.js"></script>',
+            theme_link + '\n<script defer src="./site-analytics.js"></script>',
+        ),
+    ):
+        if needle in text:
+            return text.replace(needle, repl, 1)
+    if "</head>" in text:
+        return text.replace("</head>", f"  {theme_link}\n</head>", 1)
     return text
+
+
+def update_index_shell_footer(text: str) -> str:
+    """SPA フッターを site-config の navigation.footer と同型に揃える。"""
+    block = site_shell_footer(Path("index.html"), fixed=True, include_analytics=False)
+    indented = "\n".join(("  " + line) if line else line for line in block.splitlines())
+    return re.sub(
+        r'\n  <footer class="site-footer[^"]*" role="contentinfo">.*?</footer>',
+        "\n" + indented,
+        text,
+        count=1,
+        flags=re.S,
+    )
 
 
 def update_index_brand_mark(text: str) -> str:
     mark = html_module.escape(brand_mark())
+
+    def inject(match: re.Match[str]) -> str:
+        return f"{match.group(1)}{mark}{match.group(3)}"
+
     text = re.sub(
         r'(<div class="topnav-logo-mark"[^>]*>)(.*?)(</div>)',
-        rf"\1{mark}\3",
+        inject,
         text,
         count=1,
         flags=re.S,
     )
     text = re.sub(
         r'(<div class="auth-logo-mark"[^>]*>)(.*?)(</div>)',
-        rf"\1{mark}\3",
+        inject,
         text,
         count=1,
         flags=re.S,
     )
     text = re.sub(
         r'(<span class="site-footer-logo-mark"[^>]*>)(.*?)(</span>)',
-        rf"\1{mark}\3",
+        inject,
         text,
         count=1,
         flags=re.S,
@@ -465,6 +500,7 @@ def main() -> int:
         new = update_static_page_content(new)
         if path == ROOT / "index.html":
             new = ensure_index_theme(new)
+            new = update_index_shell_footer(new)
             new = update_index_brand_mark(new)
             new = update_index_glossary_excerpt(new)
             new = update_index_faq_jsonld(new)
