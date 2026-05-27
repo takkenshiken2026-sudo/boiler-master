@@ -28,11 +28,11 @@ from tools.site_config import brand_name, clean_origin, exam_name, primary_exter
 ARTICLES_DIR = ROOT / "articles"
 
 AUTHOR_NAME = "2級ボイラー技士マスター編集部"
-AUTHOR_PROFILE = "資格学習サイト向けに、過去問形式演習・用語解説・学習導線を整理する編集チームです。"
+AUTHOR_PROFILE = "2級ボイラー技士試験の学習支援のため、過去問形式演習・用語解説・学習導線を整理する編集チームです。"
 REVIEWER_NAME = "2級ボイラー技士マスター確認担当"
 REVIEWER_PROFILE = "公開前に公式情報への誘導、断定表現、内部リンク、更新日の有無を確認します。"
-FACT_CHECKED_AT = "2026-05-17"
-REVISION_NOTE = "SEO記事テンプレート運用ルールに合わせ、目次・信頼性・公式情報・FAQ・関連記事を整備。"
+FACT_CHECKED_AT = "2026-05-28"
+REVISION_NOTE = "目次・信頼性・公式情報・FAQ・関連記事を整備し、2級ボイラー技士試験向けの表記に更新。"
 FONT_LINKS = """<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">"""

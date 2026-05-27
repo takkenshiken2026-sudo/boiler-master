@@ -27,6 +27,7 @@ def main() -> int:
     run([py, "tools/build_past_question_pages.py"])
     run([py, "tools/build_glossary_pages.py"])
     run(["bash", "tools/prepare_public_site.sh"])
+    run([py, "tools/audit_article_freshness.py", "--fail-on-review"])
     return 0
 
 

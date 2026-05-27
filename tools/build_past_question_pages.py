@@ -318,7 +318,7 @@ def build_q_index(pages: list[dict], base_url: str) -> str:
     q_index_notice = (
         "※ 掲載問題は、公式過去問そのものではなく、著作権上の配慮と最新法令への対応のため"
         "問題文・選択肢を編集した「過去問形式」の演習問題です。試験本番の原文・合格基準・"
-        "試験日程などは試験実施団体等の公式情報を、法令・通達の原文は国土交通省等の"
+        "試験日程などは試験実施団体等の公式情報を、法令・通達の原文は厚生労働省等の"
         "ウェブサイトをご確認ください。"
     )
 
@@ -352,7 +352,7 @@ def build_q_index(pages: list[dict], base_url: str) -> str:
     <p class="q-index-hero-action"><a href="../index.html#past">アプリで過去問を開く</a></p>
   </section>
   <aside class="q-index-notice" aria-label="掲載問題に関する注意">
-    {html.escape(q_index_notice).replace("試験実施団体", '<a href="https://www.exam.or.jp/" target="_blank" rel="noopener noreferrer">試験実施団体</a>').replace("国土交通省", '<a href="https://www.mlit.go.jp/" target="_blank" rel="noopener noreferrer">国土交通省</a>')}
+    {html.escape(q_index_notice).replace("試験実施団体", '<a href="https://www.exam.or.jp/" target="_blank" rel="noopener noreferrer">試験実施団体</a>').replace("厚生労働省", '<a href="https://www.mhlw.go.jp/" target="_blank" rel="noopener noreferrer">厚生労働省</a>')}
   </aside>
   <section class="q-index-years" aria-label="年度別過去問">
     {"".join(year_blocks)}
