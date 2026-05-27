@@ -1,12 +1,12 @@
 // SPA 用データ JS を HTML パース後に順序付きで読み込む（レンダリングブロック回避）
 (function (global) {
   var ASSETS = [
-    "site-config.js?v=d5f0bcec88da",
-    "site-spa-fields.js?v=d5f0bcec88da",
-    "eisei1-data-glossary.js?v=d5f0bcec88da",
-    "eisei1-data-original.js?v=d5f0bcec88da",
-    "eisei1-master-data.js?v=d5f0bcec88da",
-    "eisei1-data-ichimon.js?v=d5f0bcec88da",
+    "site-config.js?v=1d50e3a3eb68",
+    "site-spa-fields.js?v=1d50e3a3eb68",
+    "eisei1-data-glossary.js?v=1d50e3a3eb68",
+    "eisei1-data-original.js?v=1d50e3a3eb68",
+    "eisei1-master-data.js?v=1d50e3a3eb68",
+    "eisei1-data-ichimon.js?v=1d50e3a3eb68",
   ];
 
   function loadOne(src) {
