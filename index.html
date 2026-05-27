@@ -101,8 +101,8 @@
   ]
 }
 </script>
-  <link rel="stylesheet" href="site-spa.css?v=634250f30c30">
-  <link rel="stylesheet" href="site-theme.css?v=634250f30c30">
+  <link rel="stylesheet" href="site-spa.css?v=80ee9797bb47">
+  <link rel="stylesheet" href="site-theme.css?v=80ee9797bb47">
 </head>
 <body>
 
@@ -327,12 +327,7 @@
       </nav>
       <div id="ichi-config" class="ichi-config">
         <p class="ichi-config-lead">分野を選んで「開始」してください。記述が正しいときは○、誤りのときは×で答えます。</p>
-        <div class="field-chips" id="ichi-field-chips">
-          <button type="button" class="chip on" data-field="" onclick="selectIchiField(this)">全分野</button>
-          <button type="button" class="chip" data-field="law" onclick="selectIchiField(this)">法令・制度</button>
-          <button type="button" class="chip" data-field="rights" onclick="selectIchiField(this)">契約・実務</button>
-          <button type="button" class="chip" data-field="limit" onclick="selectIchiField(this)">設備・その他</button>
-        </div>
+        <div class="field-chips" id="ichi-field-chips"></div>
         <button type="button" class="btn-primary ichi-start-btn" onclick="beginIchimondouSession()">開始</button>
       </div>
       <div id="ichi-play-wrap" class="ichi-play-wrap" style="display:none">
@@ -716,12 +711,12 @@
     </footer>
 </div>
 
-<script src="site-config.js?v=634250f30c30"></script>
-<script src="site-spa-fields.js?v=634250f30c30"></script>
-<script defer src="eisei1-data-glossary.js?v=634250f30c30"></script>
-<script defer src="eisei1-data-original.js?v=634250f30c30"></script>
-<script defer src="eisei1-master-data.js?v=634250f30c30"></script>
-<script defer src="eisei1-data-ichimon.js?v=634250f30c30"></script>
+<script src="site-config.js?v=80ee9797bb47"></script>
+<script src="site-spa-fields.js?v=80ee9797bb47"></script>
+<script defer src="eisei1-data-glossary.js?v=80ee9797bb47"></script>
+<script defer src="eisei1-data-original.js?v=80ee9797bb47"></script>
+<script defer src="eisei1-master-data.js?v=80ee9797bb47"></script>
+<script defer src="eisei1-data-ichimon.js?v=80ee9797bb47"></script>
 <script>
 
 function enrichGlossaryPlaceholderDesc(){
@@ -2305,7 +2300,7 @@ function enterApp(){
   saveUser(u);
   document.getElementById('sb-avatar').textContent=currentUser.name.charAt(0);
   document.getElementById('sb-name').textContent=currentUser.name;
-  buildFieldChips(); buildYearGrid();
+  buildFieldChips(); buildIchiFieldChips(); buildYearGrid();
   gotoPage(_resolveInitialPage());
   handleDailyFirstVisit();
 }
@@ -3356,6 +3351,12 @@ function clearAllYears(){ const allYears=getPastOnlyYearsSorted();if(!allYears.l
 function buildFieldChips(){
   document.getElementById('field-chips').innerHTML=FIELDS.map(f=>
     `<div class="chip on" id="chip-${f.id}" onclick="toggleChip('${f.id}')">${f.name}</div>`).join('');
+}
+function buildIchiFieldChips(){
+  const el=document.getElementById('ichi-field-chips');
+  if(!el||typeof FIELDS==='undefined'||!Array.isArray(FIELDS)||!FIELDS.length)return;
+  el.innerHTML='<button type="button" class="chip on" data-field="" onclick="selectIchiField(this)">全分野</button>'+
+    FIELDS.map(f=>`<button type="button" class="chip" data-field="${f.id}" onclick="selectIchiField(this)">${f.name}</button>`).join('');
 }
 function toggleChip(fid){
   const idx=quizState.fields.indexOf(fid);
@@ -6645,6 +6646,6 @@ document.addEventListener('DOMContentLoaded',function(){
 </script>
 <!-- GA4: tools/html_footer.analytics_snippet と同内容（トップ SPA） -->
 <script>window.__GA4_MEASUREMENT_ID__="G-0J1YS1XD2K";</script>
-<script defer src="site-analytics.js?v=634250f30c30"></script>
+<script defer src="site-analytics.js?v=80ee9797bb47"></script>
 </body>
 </html>
