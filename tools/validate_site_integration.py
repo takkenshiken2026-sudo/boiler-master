@@ -64,9 +64,13 @@ def _index_footer(index_path: Path) -> list[Issue]:
         return [Issue(f"{index_path.name} がありません（SPA フッター未検証）")]
     text = index_path.read_text(encoding="utf-8")
     issues: list[Issue] = []
-    if "site-pages.css" not in text and "site-theme.css" not in text:
+    if "site-spa.css" not in text:
         issues.append(
-            Issue(f"{index_path.name}: site-pages.css / site-theme.css が未リンク（apply_site_config を実行）")
+            Issue(f"{index_path.name}: site-spa.css が未リンク（apply_site_config を実行）")
+        )
+    if "site-theme.css" not in text:
+        issues.append(
+            Issue(f"{index_path.name}: site-theme.css が未リンク（apply_site_config を実行）")
         )
     for m in re.finditer(
         r'<a\s+[^>]*href="([^"]+)"[^>]*>\s*過去問一覧\s*</a>',

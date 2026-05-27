@@ -26,6 +26,9 @@
 /related-sites.html
   Cache-Control: public, max-age=0, must-revalidate
 
+/site-spa.css
+  Cache-Control: public, max-age=31536000, immutable
+
 /site-theme.css
   Cache-Control: public, max-age=31536000, immutable
 

@@ -16,6 +16,7 @@ for f in \
   site-spa-fields.js \
   site-spa-load-data.js \
   site-pages.css \
+  site-spa.css \
   site-theme.css \
   site-q-index.js \
   site-terms-index.js \

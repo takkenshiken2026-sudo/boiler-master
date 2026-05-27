@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # 内容が変わるたび v= を更新する対象（リポジトリルート相対）
 VERSION_SOURCES = [
     "site-config.js",
+    "site-spa.css",
     "site-theme.css",
     "site-spa-fields.js",
     "site-spa-load-data.js",
@@ -33,6 +34,7 @@ HTML_TARGETS = [
 
 ASSET_NAMES = (
     "site-config.js",
+    "site-spa.css",
     "site-theme.css",
     "site-spa-fields.js",
     "site-spa-load-data.js",

@@ -238,12 +238,14 @@ def build_index_faq_jsonld() -> str:
 
 def update_index_faq_jsonld(text: str) -> str:
     new_block = build_index_faq_jsonld()
-    return re.sub(
-        r'<script type="application/ld\+json">[\s\S]*?</script>\s*(?=</head>)',
-        new_block + "\n",
-        text,
-        count=1,
+    faq_pattern = (
+        r'<script type="application/ld\+json">\s*\{[\s\S]*?"@type"\s*:\s*"FAQPage"[\s\S]*?\}\s*</script>'
     )
+    if re.search(faq_pattern, text):
+        return re.sub(faq_pattern, new_block, text, count=1)
+    if "</head>" in text:
+        return text.replace("</head>", "  " + new_block + "\n</head>", 1)
+    return text
 
 
 def update_index_template_content(text: str) -> str:
@@ -378,23 +380,33 @@ def replace_static_chrome(text: str, path: Path) -> str:
     return ensure_theme_link(text, rel_path)
 
 
-def ensure_index_theme(text: str) -> str:
-    if "site-theme.css" in text:
-        return text
+def ensure_index_styles(text: str) -> str:
+    """index.html に SPA 本体 CSS とテーマ CSS を必ずリンクする。"""
+    spa_link = '<link rel="stylesheet" href="site-spa.css">'
     theme_link = '<link rel="stylesheet" href="site-theme.css">'
-    for needle, repl in (
-        ('<script src="site-config.js"></script>', theme_link + '\n<script src="site-config.js"></script>'),
-        ('<script src="./site-config.js"></script>', theme_link + '\n  <script src="./site-config.js"></script>'),
-        ('<script defer src="site-analytics.js"></script>', theme_link + '\n<script defer src="site-analytics.js"></script>'),
-        (
-            '<script defer src="./site-analytics.js"></script>',
-            theme_link + '\n<script defer src="./site-analytics.js"></script>',
-        ),
-    ):
-        if needle in text:
-            return text.replace(needle, repl, 1)
-    if "</head>" in text:
-        return text.replace("</head>", f"  {theme_link}\n</head>", 1)
+    if "site-spa.css" not in text:
+        if "site-theme.css" in text:
+            text = text.replace(
+                '<link rel="stylesheet" href="site-theme.css">',
+                f"{spa_link}\n  {theme_link}",
+                1,
+            )
+        elif "</head>" in text:
+            text = text.replace("</head>", f"  {spa_link}\n  {theme_link}\n</head>", 1)
+    if "site-theme.css" not in text:
+        for needle, repl in (
+            ('<script src="site-config.js"></script>', theme_link + '\n<script src="site-config.js"></script>'),
+            ('<script src="./site-config.js"></script>', theme_link + '\n  <script src="./site-config.js"></script>'),
+            ('<script defer src="site-analytics.js"></script>', theme_link + '\n<script defer src="site-analytics.js"></script>'),
+            (
+                '<script defer src="./site-analytics.js"></script>',
+                theme_link + '\n<script defer src="./site-analytics.js"></script>',
+            ),
+        ):
+            if needle in text:
+                return text.replace(needle, repl, 1)
+        if "</head>" in text:
+            return text.replace("</head>", f"  {theme_link}\n</head>", 1)
     return text
 
 
@@ -499,7 +511,7 @@ def main() -> int:
         new = replace_static_chrome(replace_all(old), path)
         new = update_static_page_content(new)
         if path == ROOT / "index.html":
-            new = ensure_index_theme(new)
+            new = ensure_index_styles(new)
             new = update_index_shell_footer(new)
             new = update_index_brand_mark(new)
             new = update_index_glossary_excerpt(new)
