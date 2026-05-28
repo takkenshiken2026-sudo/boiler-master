@@ -1,0 +1,11 @@
+hub_a,hub_b,kind,similarity,slug_a,slug_b,title_a,title_b
+comparisons.csv,comparisons.csv,similar,0.889,s35-unten-cmp,s35-unten-taihi,ボイラー運転の比較,ボイラー運転の対比
+comparisons.csv,numbers.csv,similar,0.889,s35-unten-cmp,s35-unten-ratio,ボイラー運転の比較,ボイラー運転の比率
+comparisons.csv,numbers.csv,similar,0.889,s35-unten-taihi,s35-unten-ratio,ボイラー運転の対比,ボイラー運転の比率
+comparisons.csv,numbers.csv,similar,0.900,s42-boiler-kaisei-seido,s42-boiler-kaisei-freq,ボイラー法改正の制度,ボイラー法改正の頻度
+numbers.csv,numbers.csv,similar,0.889,s35-unten-num,s35-unten-count,ボイラー運転の数値,ボイラー運転の回数
+numbers.csv,mistakes.csv,similar,0.900,s42-boiler-kaisei-check,s42-kon-boiler-kaisei-gokai,ボイラー法改正の確認,ボイラー法改正の誤認
+mistakes.csv,mistakes.csv,similar,0.957,anzen-nigasiben-kongou,s31-kon-anzenben,安全弁と逃がし弁の混同,安全弁と逃がし弁の再混同
+mistakes.csv,mistakes.csv,similar,0.889,s31-kon-jouki-joutai,s32-kon-jouki,蒸気状態の用語誤読,蒸気性状の用語誤読
+mistakes.csv,mistakes.csv,similar,0.952,s31-kon-gas-bunseki,s33-kon-haigasu,ガス分析値の読み違い,排ガス分析値の読み違い
+mistakes.csv,mistakes.csv,similar,0.941,s32-kon-junkan,s33-kon-junkan,循環方式の再混同,水循環方式の再混同
