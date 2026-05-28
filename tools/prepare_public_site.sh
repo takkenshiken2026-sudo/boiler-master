@@ -13,13 +13,13 @@ for f in \
   related-sites.html \
   site-config.json \
   site-config.js \
-  site-spa-fields.js \
-  site-spa-load-data.js \
   site-pages.css \
-  site-spa.css \
   site-theme.css \
   site-q-index.js \
   site-terms-index.js \
+  site-compare-index.js \
+  site-knowledge-hub-index.js \
+  site-priority-index.js \
   site-analytics.js \
   CNAME \
   robots.txt \
@@ -36,9 +36,6 @@ do
   fi
   cp "$f" "$OUT/"
 done
-if [[ -f "$ROOT/_headers" ]]; then
-  cp "$ROOT/_headers" "$OUT/"
-fi
 for d in articles q terms; do
   if [[ -d "$ROOT/$d" ]]; then
     cp -R "$ROOT/$d" "$OUT/"

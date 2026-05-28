@@ -400,6 +400,7 @@ def parse_related_link_tokens(
 ) -> list[tuple[str, str]]:
     """(相対href, ラベル)"""
     from tools.build_glossary_pages import field_hub_slug, lookup_key
+    from tools.knowledge_hub_seo import field_hub_page_exists
 
     items: list[tuple[str, str]] = []
     seen: set[str] = set()
@@ -453,11 +454,13 @@ def parse_related_link_tokens(
         elif kind == "practice":
             add(rel_href(rel_path, "index.html#past"), label or "アプリで演習する")
         elif kind == "field":
-            hub = field_hub_slug(page.get("category") or "")
-            add(
-                rel_href(rel_path, f"terms/{hub}/index.html"),
-                label or f"{page.get('category', '')}の用語一覧",
-            )
+            cat = page.get("category") or ""
+            if field_hub_page_exists(cat):
+                hub = field_hub_slug(cat)
+                add(
+                    rel_href(rel_path, f"terms/{hub}/index.html"),
+                    label or f"{cat}の用語一覧",
+                )
 
     return items
 
@@ -506,12 +509,15 @@ def build_related_links_html(
         add_auto(href, gl["label"])
 
     from tools.build_glossary_pages import field_hub_slug
+    from tools.knowledge_hub_seo import field_hub_page_exists
 
-    hub = field_hub_slug(page.get("category") or "")
-    add_auto(
-        rel_href(rel_path, f"terms/{hub}/index.html"),
-        f"{page.get('category', '')}の用語一覧",
-    )
+    cat = page.get("category") or ""
+    if field_hub_page_exists(cat):
+        hub = field_hub_slug(cat)
+        add_auto(
+            rel_href(rel_path, f"terms/{hub}/index.html"),
+            f"{cat}の用語一覧",
+        )
 
     for href_rel, title in guide_links_for_page(page.get("category") or "", guides):
         add_auto(rel_href(rel_path, href_rel), title)
@@ -827,12 +833,6 @@ def build_q_index(pages: list[dict], base_url: str) -> str:
     )
     q_index_breadcrumb = breadcrumb_html(rel_path, [("トップ", "index.html"), ("過去問一覧", None)])
     q_index_footer = site_page_footer(rel_path, current="q")
-    q_index_notice = (
-        "※ 掲載問題は、公式過去問そのものではなく、著作権上の配慮と最新法令への対応のため"
-        "問題文・選択肢を編集した「過去問形式」の演習問題です。試験本番の原文・合格基準・"
-        "試験日程などは試験実施団体等の公式情報を、法令・通達の原文は厚生労働省等の"
-        "ウェブサイトをご確認ください。"
-    )
 
     from tools.q_page_seo import (
         index_h1,
@@ -916,14 +916,6 @@ def build_q_index(pages: list[dict], base_url: str) -> str:
         <nav class="q-index-pagination hide" id="q-index-pagination" aria-label="ページ送り"></nav>
       </div>
     </div>
-    <div class="q-index-chips" aria-label="分野別件数">{category_chips}</div>
-    <p class="q-index-hero-action"><a href="../index.html#past">アプリで過去問を開く</a></p>
-  </section>
-  <aside class="q-index-notice" aria-label="掲載問題に関する注意">
-    {html.escape(q_index_notice).replace("試験実施団体", '<a href="https://www.exam.or.jp/" target="_blank" rel="noopener noreferrer">試験実施団体</a>').replace("厚生労働省", '<a href="https://www.mhlw.go.jp/" target="_blank" rel="noopener noreferrer">厚生労働省</a>')}
-  </aside>
-  <section class="q-index-years" aria-label="年度別過去問">
-    {"".join(year_blocks)}
   </section>
 </main>
 {q_index_footer}

@@ -24,48 +24,121 @@
   },
   "navigation": {
     "header": [
-      {"label": "トップ", "href": "index.html", "key": "top"},
-      {"label": "このサイトについて", "href": "about.html", "key": "about"},
-      {"label": "過去問一覧", "href": "q/index.html", "key": "q"},
-      {"label": "用語集", "href": "terms/index.html", "key": "terms"},
-      {"label": "試験ガイド", "href": "articles/index.html", "key": "articles"},
-      {"label": "関連リンク", "href": "related-sites.html", "key": "related"},
-      {"label": "プライバシー", "href": "privacy.html", "key": "privacy"}
+      {
+        "label": "トップ",
+        "href": "index.html",
+        "key": "top"
+      },
+      {
+        "label": "このサイトについて",
+        "href": "about.html",
+        "key": "about"
+      },
+      {
+        "label": "過去問一覧",
+        "href": "q/index.html",
+        "key": "q"
+      },
+      {
+        "label": "用語集",
+        "href": "terms/index.html",
+        "key": "terms"
+      },
+      {
+        "label": "試験ガイド",
+        "href": "articles/index.html",
+        "key": "articles"
+      },
+      {
+        "label": "関連リンク",
+        "href": "related-sites.html",
+        "key": "related"
+      },
+      {
+        "label": "プライバシー",
+        "href": "privacy.html",
+        "key": "privacy"
+      }
     ],
     "footer": [
-      {"label": "トップ", "href": "index.html", "key": "top"},
-      {"label": "このサイトについて", "href": "about.html", "key": "about"},
-      {"label": "過去問一覧", "href": "q/index.html", "key": "q"},
-      {"label": "用語集", "href": "terms/index.html", "key": "terms"},
-      {"label": "試験ガイド", "href": "articles/index.html", "key": "articles"},
-      {"label": "関連リンク", "href": "related-sites.html", "key": "related"},
-      {"label": "プライバシー", "href": "privacy.html", "key": "privacy"},
-      {"label": "お問い合わせ", "href": "__CONTACT__", "key": "contact"}
+      {
+        "label": "トップ",
+        "href": "index.html",
+        "key": "top"
+      },
+      {
+        "label": "このサイトについて",
+        "href": "about.html",
+        "key": "about"
+      },
+      {
+        "label": "過去問一覧",
+        "href": "q/index.html",
+        "key": "q"
+      },
+      {
+        "label": "用語集",
+        "href": "terms/index.html",
+        "key": "terms"
+      },
+      {
+        "label": "試験ガイド",
+        "href": "articles/index.html",
+        "key": "articles"
+      },
+      {
+        "label": "関連リンク",
+        "href": "related-sites.html",
+        "key": "related"
+      },
+      {
+        "label": "プライバシー",
+        "href": "privacy.html",
+        "key": "privacy"
+      },
+      {
+        "label": "お問い合わせ",
+        "href": "__CONTACT__",
+        "key": "contact"
+      }
     ]
   },
   "fields": [
     {
       "id": "structure",
       "name": "ボイラーの構造に関する知識",
-      "aliases": ["ボイラーの構造に関する知識", "構造"],
+      "aliases": [
+        "ボイラーの構造に関する知識",
+        "構造"
+      ],
       "legacyGlossaryCat": "lawN"
     },
     {
       "id": "handling",
       "name": "ボイラーの取扱いに関する知識",
-      "aliases": ["ボイラーの取扱いに関する知識", "取扱い"],
+      "aliases": [
+        "ボイラーの取扱いに関する知識",
+        "取扱い"
+      ],
       "legacyGlossaryCat": "rightsN"
     },
     {
       "id": "fuel",
       "name": "燃料及び燃焼に関する知識",
-      "aliases": ["燃料及び燃焼に関する知識", "燃料及び燃焼", "燃焼"],
+      "aliases": [
+        "燃料及び燃焼に関する知識",
+        "燃料及び燃焼",
+        "燃焼"
+      ],
       "legacyGlossaryCat": "limit"
     },
     {
       "id": "law",
       "name": "関係法令",
-      "aliases": ["関係法令", "法令"],
+      "aliases": [
+        "関係法令",
+        "法令"
+      ],
       "legacyGlossaryCat": "lawH"
     }
   ],
@@ -77,15 +150,89 @@
     }
   ],
   "guideArticleGenres": [
-    {"id": "overview", "label": "試験概要", "phase": "制度を知る", "style": "overview", "hint": ""},
-    {"id": "preparation", "label": "受験準備", "phase": "制度を知る", "style": "institution", "hint": ""},
-    {"id": "strategy", "label": "試験対策", "phase": "学習を設計する", "style": "study", "hint": ""},
-    {"id": "study-plan", "label": "学習計画", "phase": "学習を設計する", "style": "study", "hint": ""},
-    {"id": "study-method", "label": "学習法", "phase": "学習を設計する", "style": "study", "hint": ""},
-    {"id": "past-questions", "label": "過去問活用", "phase": "演習と定着", "style": "practice", "hint": ""},
-    {"id": "field-study", "label": "科目別対策", "phase": "演習と定着", "style": "practice", "hint": ""},
-    {"id": "key-topic", "label": "重要論点", "phase": "演習と定着", "style": "practice", "hint": ""},
-    {"id": "law", "label": "法令対策", "phase": "演習と定着", "style": "practice", "hint": ""},
-    {"id": "career", "label": "キャリア", "phase": "合格後", "style": "meta", "hint": ""}
+    {
+      "id": "overview",
+      "label": "試験概要",
+      "phase": "制度を知る",
+      "style": "overview",
+      "hint": "試験の全体像・公式情報の見方・サイトの使い方"
+    },
+    {
+      "id": "application",
+      "label": "受験・申込",
+      "phase": "制度を知る",
+      "style": "institution",
+      "hint": "受験資格・日程・手数料・申込手続き・免除"
+    },
+    {
+      "id": "pass-stats",
+      "label": "合格・難易度",
+      "phase": "制度を知る",
+      "style": "institution",
+      "hint": "合格率・合格点・難易度・統計の読み方"
+    },
+    {
+      "id": "exam-scope",
+      "label": "出題・形式",
+      "phase": "制度を知る",
+      "style": "institution",
+      "hint": "出題範囲・科目構成・試験形式"
+    },
+    {
+      "id": "study-plan",
+      "label": "学習計画",
+      "phase": "学習を設計する",
+      "style": "study",
+      "hint": "学習期間・週間表・働きながら・初学者向け"
+    },
+    {
+      "id": "self-study",
+      "label": "独学対策",
+      "phase": "学習を設計する",
+      "style": "study",
+      "hint": "独学の進め方・教材選び・継続"
+    },
+    {
+      "id": "past-questions",
+      "label": "過去問活用",
+      "phase": "演習と定着",
+      "style": "practice",
+      "hint": "過去問・模試・一問一答・解き直し"
+    },
+    {
+      "id": "field-study",
+      "label": "分野別対策",
+      "phase": "演習と定着",
+      "style": "practice",
+      "hint": "分野ごとの基礎・頻出（fields ごとに増やす）"
+    },
+    {
+      "id": "glossary-study",
+      "label": "用語整理",
+      "phase": "演習と定着",
+      "style": "practice",
+      "hint": "用語集の使い方・混同語・数字"
+    },
+    {
+      "id": "review-weak",
+      "label": "復習・苦手克服",
+      "phase": "演習と定着",
+      "style": "practice",
+      "hint": "復習サイクル・間違いノート・苦手分野"
+    },
+    {
+      "id": "final-prep",
+      "label": "直前・当日",
+      "phase": "直前と当日",
+      "style": "final",
+      "hint": "直前1〜2週間・当日の持ち物・会場"
+    },
+    {
+      "id": "cautions",
+      "label": "注意点・更新",
+      "phase": "横断",
+      "style": "meta",
+      "hint": "誤解・制度変更・合格後手続き・再受験"
+    }
   ]
 }
