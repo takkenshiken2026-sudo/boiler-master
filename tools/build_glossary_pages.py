@@ -178,8 +178,8 @@ def split_semicolon(s: str) -> list[str]:
     return [x.strip() for x in (s or "").split(";") if x.strip()]
 
 
-TERMS_INDEX_CSS_VER = "20260529-terms-tabs"
-TERMS_INDEX_JS_VER = "20260529-terms-tabs"
+TERMS_INDEX_CSS_VER = "20260529-hub-columns"
+TERMS_INDEX_JS_VER = "20260529-hub-columns"
 TERMS_INDEX_SEARCH_PLACEHOLDER = "例：ストレスチェック、ラインケア、うつ病…"
 
 # CSV enrich 時の分野テンプレ（一覧の定義抜粋には出さない）
@@ -250,147 +250,24 @@ def terms_index_snippet(entry: dict) -> str:
     return short
 
 
-_NUMERIC_INDEX_RE = re.compile(
-    r"(\d+\.?\d*\s*(?:MPa|kPa|kW|℃|m²|平方メートル|日|年|か月|ヶ月|時間|時間以内|日以内|有効期間|期限|検査証|伝熱面積)"
-    r"|検査証の有効期間|伝熱面積)"
-)
-
-
-def is_learning_theme_entry(entry: dict) -> bool:
-    tags = entry.get("tags") or ""
-    return "頻出テーマ" in tags or "学習導線" in tags
-
-
-def is_numeric_deadline_entry(entry: dict) -> bool:
-    if is_learning_theme_entry(entry):
-        return False
-    if entry.get("category") == "関係法令":
-        return True
-    blob = " ".join(
-        [
-            entry.get("legal_basis") or "",
-            entry.get("short_def") or "",
-            entry.get("definition") or "",
-            entry.get("explanation") or "",
-        ]
-    )
-    return bool(_NUMERIC_INDEX_RE.search(blob))
-
-
-def comparison_index_summary(entry: dict) -> str:
-    html_text = (entry.get("comparison_html") or "").strip()
-    if not html_text:
-        return ""
-    headers = re.findall(r"<th[^>]*>([^<]+)</th>", html_text)
-    compared = [h.strip() for h in headers if h.strip() and h.strip() != "項目"]
-    if not compared:
-        return f"{entry.get('term') or ''}の比較・整理表を掲載しています。"
-    row_labels = re.findall(r"<tbody>.*?</tbody>", html_text, re.DOTALL)
-    aspects: list[str] = []
-    if row_labels:
-        aspects = [
-            x.strip()
-            for x in re.findall(r"<tr>\s*<th[^>]*>([^<]+)</th>", row_labels[0])
-            if x.strip()
-        ]
-    names = "・".join(compared[:4])
-    if len(compared) > 4:
-        names += "など"
-    if aspects:
-        return f"{names}を、{'・'.join(aspects[:3])}などの観点で比較した整理表です。"
-    return f"{names}の違いを整理した比較表です。"
-
-
-def numeric_index_summary(entry: dict) -> str:
-    if not is_numeric_deadline_entry(entry):
-        return ""
-    term = entry.get("term") or ""
-    for src in (
-        entry.get("short_def"),
-        entry.get("definition"),
-        entry.get("explanation"),
-        entry.get("term_detail_body"),
-    ):
-        if not src:
-            continue
-        for sentence in split_sentences(src):
-            if _NUMERIC_INDEX_RE.search(sentence):
-                text = sentence.strip()
-                if len(text) > 180:
-                    return text[:179] + "…"
-                return text
-    return f"{term}に関する法令上の数値・期限の要点を整理した記事です。"
-
-
-def mistakes_index_summary(entry: dict) -> str:
-    items = split_semicolon(entry.get("common_mistakes") or "")
-    if not items:
-        return ""
-    generic = {
-        "定義文を丸暗記し、言い換え・数値条件の選択肢に対応できない",
-    }
-    meaningful = [
-        x
-        for x in items
-        if x not in generic and "という見出しだけ覚え" not in x
-    ]
-    pick = meaningful[0] if meaningful else items[0]
-    if len(pick) > 180:
-        return pick[:179] + "…"
-    return pick
-
-
-TERMS_INDEX_TABS: tuple[tuple[str, str, str, str], ...] = (
-    ("terms", "用語解説", "用語", "定義"),
-    ("compare", "比較・整理表", "項目", "概要"),
-    ("numeric", "数値・期限早見表", "項目", "概要"),
-    ("mistakes", "よくある誤答", "項目", "概要"),
-)
-
-
-def terms_index_tab_summary(entry: dict, tab: str) -> str:
-    if tab == "terms":
-        return terms_index_snippet(entry)
-    if tab == "compare":
-        return comparison_index_summary(entry)
-    if tab == "numeric":
-        return numeric_index_summary(entry)
-    if tab == "mistakes":
-        return mistakes_index_summary(entry)
-    return ""
-
-
-def terms_index_tab_entries(entries: list[dict], tab: str) -> list[dict]:
-    if tab == "terms":
-        return entries
-    if tab == "compare":
-        return [e for e in entries if (e.get("comparison_html") or "").strip()]
-    if tab == "numeric":
-        return [e for e in entries if is_numeric_deadline_entry(e)]
-    if tab == "mistakes":
-        return [e for e in entries if mistakes_index_summary(e)]
-    return entries
-
-
-def render_terms_index_tbody(entries: list[dict], tab: str = "terms") -> str:
+def render_terms_index_tbody(entries: list[dict]) -> str:
     """JS 未実行時も一覧が見えるよう、全件の tbody をサーバー側で生成する（1語1行・3列）。"""
-    _, _, col_item, col_detail = next(t for t in TERMS_INDEX_TABS if t[0] == tab)
-    items = sort_terms_index_entries(terms_index_tab_entries(entries, tab))
+    items = sort_terms_index_entries(entries)
     rows: list[str] = []
 
     for item in items:
         href = html.escape(terms_index_href(item["slug_file"]))
         href_attr = f' data-entry-href="{href}"'
-        detail = html.escape(terms_index_tab_summary(item, tab))
+        short_def = html.escape(terms_index_snippet(item))
         rows.append(
             "<tr class=\"terms-idx-table-row\">"
-            f'<td class="terms-idx-td-term" data-label="{html.escape(col_item)}"{href_attr} tabindex="0">'
+            f'<td class="terms-idx-td-term" data-label="用語"{href_attr} tabindex="0">'
             f'<div class="terms-idx-term-cell"><a href="{href}">{html.escape(item["term"])}</a>'
             f"</div></td>"
             f'<td class="terms-idx-td-cat" data-label="分野"{href_attr}>'
             f'{html.escape(item.get("category") or "")}</td>'
-            f'<td class="terms-idx-td-snippet" data-label="{html.escape(col_detail)}"{href_attr}>'
-            f"{detail}</td>"
+            f'<td class="terms-idx-td-snippet" data-label="定義"{href_attr}>'
+            f"{short_def}</td>"
             "</tr>"
         )
     return "\n".join(rows)
@@ -399,16 +276,10 @@ def render_terms_index_tbody(entries: list[dict], tab: str = "terms") -> str:
 def terms_index_item_dict(entry: dict) -> dict:
     tags = parse_term_tags(entry.get("tags") or "")
     snippet = terms_index_snippet(entry)
-    compare_summary = comparison_index_summary(entry)
-    numeric_summary = numeric_index_summary(entry)
-    mistakes_summary = mistakes_index_summary(entry)
     search_bits = [
         entry["term"],
         entry.get("category") or "",
         snippet,
-        compare_summary,
-        numeric_summary,
-        mistakes_summary,
         *tags,
     ]
     return {
@@ -416,9 +287,6 @@ def terms_index_item_dict(entry: dict) -> dict:
         "category": entry.get("category") or "",
         "tags": tags,
         "shortDef": snippet,
-        "compareSummary": compare_summary,
-        "numericSummary": numeric_summary,
-        "mistakesSummary": mistakes_summary,
         "href": terms_index_href(entry["slug_file"]),
         "fieldHub": entry.get("field_hub") or "",
         "search": " ".join(x for x in search_bits if x),
@@ -1230,25 +1098,7 @@ def build_terms_index(entries: list[dict], base_url: str) -> str:
     json_data = json.dumps(
         [terms_index_item_dict(e) for e in entries], ensure_ascii=False
     )
-    tab_counts = {
-        tab_id: len(terms_index_tab_entries(entries, tab_id))
-        for tab_id, _, _, _ in TERMS_INDEX_TABS
-    }
-    tab_buttons = []
-    for tab_id, label, _, _ in TERMS_INDEX_TABS:
-        count = tab_counts[tab_id]
-        active = " on" if tab_id == "terms" else ""
-        tab_buttons.append(
-            "        "
-            f'<button type="button" class="terms-idx-tab{active}" role="tab" '
-            f'id="terms-idx-tab-{html.escape(tab_id, quote=True)}" '
-            f'data-tab="{html.escape(tab_id, quote=True)}" '
-            f'aria-selected="{"true" if tab_id == "terms" else "false"}" '
-            f'aria-controls="terms-idx-flat-body">'
-            f"{html.escape(label)}<b>{count}</b></button>"
-        )
-    tabs_html = "\n".join(tab_buttons)
-    tbody_html = render_terms_index_tbody(entries, "terms")
+    tbody_html = render_terms_index_tbody(entries)
 
     idx_path = Path("terms/index.html")
     terms_header = site_page_header(idx_path, current="terms", wide=True)
@@ -1299,7 +1149,7 @@ def build_terms_index(entries: list[dict], base_url: str) -> str:
     <div class="terms-index-head">
       <div>
         <h2 id="terms-index-heading">用語解説一覧</h2>
-        <p>全{n_terms}語・{n_cats}分野。区分を切り替えて検索・絞り込みできます。</p>
+        <p>全{n_terms}語・{n_cats}分野。キーワード検索と分野で絞り込めます。</p>
       </div>
     </div>
     <div class="terms-index-tools">
@@ -1316,9 +1166,6 @@ def build_terms_index(entries: list[dict], base_url: str) -> str:
       <button type="button" class="terms-idx-reset hide" id="terms-idx-reset">条件をクリア</button>
       <div class="terms-idx-active-filters hide" id="terms-idx-active-filters" aria-live="polite"></div>
     </div>
-    <div class="terms-idx-tabs" role="tablist" aria-label="用語解説の区分">
-{tabs_html}
-    </div>
     <div class="terms-idx-empty-panel hide" id="terms-idx-empty" role="status" hidden>
       <p class="terms-idx-empty-title">条件に一致する用語がありません</p>
       <p class="terms-idx-empty-hint">検索語を短くするか、分野を「すべて」に戻してお試しください。</p>
@@ -1328,9 +1175,9 @@ def build_terms_index(entries: list[dict], base_url: str) -> str:
       <div class="terms-idx-table-wrap">
         <table class="terms-idx-table">
           <thead><tr>
-            <th scope="col" class="terms-idx-th-term" id="terms-idx-col-item">用語</th>
+            <th scope="col" class="terms-idx-th-term">用語</th>
             <th scope="col" class="terms-idx-th-cat">分野</th>
-            <th scope="col" class="terms-idx-th-def" id="terms-idx-col-detail">定義</th>
+            <th scope="col" class="terms-idx-th-def">定義</th>
           </tr></thead>
           <tbody id="terms-idx-flat-body">
 {tbody_html}
@@ -1347,7 +1194,6 @@ def build_terms_index(entries: list[dict], base_url: str) -> str:
 {site_page_wrap_close()}
 <button type="button" class="terms-idx-top" id="terms-idx-top" aria-label="ページ上部へ">↑</button>
 <script type="application/json" id="terms-index-data">{json_data}</script>
-<script type="application/json" id="terms-index-tabs">{json.dumps([{"id": t[0], "label": t[1], "colItem": t[2], "colDetail": t[3]} for t in TERMS_INDEX_TABS], ensure_ascii=False)}</script>
 <script defer src="../site-terms-index.js?v={TERMS_INDEX_JS_VER}"></script>
 </body>
 </html>
