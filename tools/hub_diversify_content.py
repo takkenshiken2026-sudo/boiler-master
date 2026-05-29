@@ -7,6 +7,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from collections import defaultdict
 from typing import Any
 
 from tools.hub_strip_batch_suffix import BATCH_SUFFIX_RE
@@ -1171,7 +1172,31 @@ def _dedupe_mistake_patterns(rows: list[dict[str, str]]) -> None:
                 _differentiate_duplicate_patterns(row)
 
 
+BATCH_EARLY_LABEL: dict[int, str] = {
+    30: "基礎",
+    31: "整理",
+    32: "構造・取扱い",
+    33: "取扱い深掘り",
+    34: "試験頻出",
+}
+
+
+def _resolve_title_collisions(rows: list[dict[str, str]]) -> None:
+    by_title: dict[str, list[dict[str, str]]] = defaultdict(list)
+    for row in rows:
+        by_title[(row.get("title") or "").strip()].append(row)
+    for title, group in by_title.items():
+        if len(group) < 2 or not title:
+            continue
+        for row in group:
+            batch = _batch_num(row.get("slug", ""))
+            label = BATCH_EARLY_LABEL.get(batch or 0) or _reader_disambig(row, row.get("slug", ""))
+            if label and f"（{label}）" not in title:
+                row["title"] = f"{title}（{label}）"
+
+
 def diversify_hub_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    _resolve_title_collisions(rows)
     for row in rows:
         diversify_hub_row(row)
     _dedupe_mistake_patterns(rows)
