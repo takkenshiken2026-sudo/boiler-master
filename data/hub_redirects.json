@@ -161,7 +161,17 @@
     "s44-2kyu-chokuzen-freq": "s44-2kyu-chokuzen-cycle",
     "s44-2kyu-chokuzen-time": "s44-2kyu-chokuzen-cycle",
     "s44-2kyu-chokuzen-kijun": "s44-2kyu-chokuzen-cycle",
-    "s44-2kyu-chokuzen-check": "s44-2kyu-chokuzen-cycle"
+    "s44-2kyu-chokuzen-check": "s44-2kyu-chokuzen-cycle",
+    "s33-anzenben-teichi": "s32-anzenben-teichi",
+    "s33-teisuii-saitei": "s32-teisuii-saitei",
+    "s34-atsuryoku-jogen": "s32-atsuryoku-jogen",
+    "s33-shiken-jikan": "s32-shiken-jikan",
+    "s33-hourei-koushin": "s32-hourei-koushin",
+    "s33-nensho-kanki": "s31-kanki-karyou",
+    "s34-buro-kanri": "s32-buro-kanri-chi",
+    "s34-nensho-gas": "s32-nensho-exhaust",
+    "s34-kyusui-shihyou": "s32-kyusui-shori-chi",
+    "s33-kamoku-haibun": "s32-kamoku-bunseki"
   },
   "mistakes": {
     "s35-kon-unten-reverse": "s35-kon-unten-kon",
@@ -243,6 +253,7 @@
     "s44-kon-2kyu-chokuzen-omit": "s44-kon-2kyu-chokuzen-gokai",
     "s44-kon-2kyu-chokuzen-over": "s44-kon-2kyu-chokuzen-gokai",
     "s44-kon-2kyu-chokuzen-nouse": "s44-kon-2kyu-chokuzen-gokai",
-    "s44-kon-2kyu-chokuzen-zero": "s44-kon-2kyu-chokuzen-gokai"
+    "s44-kon-2kyu-chokuzen-zero": "s44-kon-2kyu-chokuzen-gokai",
+    "s34-kon-fuzoku-valve": "s31-kon-anzenben"
   }
 }
