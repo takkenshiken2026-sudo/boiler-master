@@ -208,10 +208,10 @@
     },
     {
       "id": "glossary-study",
-      "label": "用語整理",
+      "label": "用語ハブ活用法",
       "phase": "演習と定着",
       "style": "practice",
-      "hint": "用語集の使い方・混同語・数字"
+      "hint": "知識ハブ4タブの使い方・回遊（用語の定義記事は書かない）"
     },
     {
       "id": "review-weak",
