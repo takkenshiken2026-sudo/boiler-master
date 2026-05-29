@@ -121,7 +121,7 @@
   function rowHtml(item, query) {
     const href = resolveEntryHref(item.href);
     const hrefAttr = ` data-entry-href="${escapeHtml(href)}"`;
-    const detail = item.shortDef || '';
+    const detail = item.shortDef || item.definition;
     return `<tr class="terms-idx-table-row">
 <td class="terms-idx-td-term" data-label="用語"${hrefAttr} tabindex="0"><div class="terms-idx-term-cell"><a href="${escapeHtml(href)}">${highlightText(item.term, query)}</a></div></td>
 <td class="terms-idx-td-cat" data-label="分野"${hrefAttr}>${escapeHtml(item.category)}</td>
