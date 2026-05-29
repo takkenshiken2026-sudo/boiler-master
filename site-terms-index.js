@@ -1,5 +1,5 @@
 /**
- * 用語集一覧 terms/index.html — 3列・1語1行（横スクロールなし・全件表示）
+ * 用語集一覧 terms/index.html — 4区分タブ（用語解説 / 比較・整理表 / 数値・期限 / よくある誤答）
  * 再生成: python3 tools/build_glossary_pages.py
  */
 (() => {
@@ -11,10 +11,20 @@
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
   const dataEl = document.getElementById('terms-index-data');
+  const tabsEl = document.getElementById('terms-index-tabs');
   const ITEMS = dataEl ? JSON.parse(dataEl.textContent || '[]') : [];
+  const TABS = tabsEl
+    ? JSON.parse(tabsEl.textContent || '[]')
+    : [
+        { id: 'terms', label: '用語解説', colItem: '用語', colDetail: '定義' },
+        { id: 'compare', label: '比較・整理表', colItem: '項目', colDetail: '概要' },
+        { id: 'numeric', label: '数値・期限早見表', colItem: '項目', colDetail: '概要' },
+        { id: 'mistakes', label: 'よくある誤答', colItem: '項目', colDetail: '概要' },
+      ];
 
   const q = document.getElementById('terms-idx-q');
   const chips = $$('.terms-idx-chip[data-cat]');
+  const tabButtons = $$('.terms-idx-tab[data-tab]');
   const hit = document.getElementById('terms-idx-hit');
   const empty = document.getElementById('terms-idx-empty');
   const toolbarReset = document.getElementById('terms-idx-reset');
@@ -23,14 +33,34 @@
   const toolbar = document.querySelector('.terms-index-tools');
   const topBtn = document.getElementById('terms-idx-top');
   const flatBody = document.getElementById('terms-idx-flat-body');
+  const colItemHead = document.getElementById('terms-idx-col-item');
+  const colDetailHead = document.getElementById('terms-idx-col-detail');
   const TERMS_INDEX_BASE = '/terms/';
 
   let activeCat = 'all';
+  let activeTab = 'terms';
   let urlSyncTimer = null;
   const DEBOUNCE_MS = 150;
   let inputDebounceTimer = null;
 
+  const TAB_SUMMARY_KEY = {
+    terms: 'shortDef',
+    compare: 'compareSummary',
+    numeric: 'numericSummary',
+    mistakes: 'mistakesSummary',
+  };
+
   const norm = (s) => (s || '').toString().trim().toLowerCase();
+
+  function currentTabMeta() {
+    return TABS.find((t) => t.id === activeTab) || TABS[0];
+  }
+
+  function tabItems(tabId) {
+    const key = TAB_SUMMARY_KEY[tabId] || 'shortDef';
+    if (tabId === 'terms') return ITEMS;
+    return ITEMS.filter((item) => (item[key] || '').trim());
+  }
 
   function parseSearchTokens(raw) {
     const parts = norm(raw).split(/\s+/).filter(Boolean);
@@ -118,13 +148,19 @@
     return `${TERMS_INDEX_BASE}${String(href).replace(/^\.\//, '')}`;
   }
 
-  function rowHtml(item, query) {
+  function itemDetail(item) {
+    const key = TAB_SUMMARY_KEY[activeTab] || 'shortDef';
+    return item[key] || '';
+  }
+
+  function rowHtml(item, query, tabMeta) {
     const href = resolveEntryHref(item.href);
     const hrefAttr = ` data-entry-href="${escapeHtml(href)}"`;
+    const detail = itemDetail(item);
     return `<tr class="terms-idx-table-row">
-<td class="terms-idx-td-term" data-label="用語"${hrefAttr} tabindex="0"><div class="terms-idx-term-cell"><a href="${escapeHtml(href)}">${highlightText(item.term, query)}</a></div></td>
+<td class="terms-idx-td-term" data-label="${escapeHtml(tabMeta.colItem)}"${hrefAttr} tabindex="0"><div class="terms-idx-term-cell"><a href="${escapeHtml(href)}">${highlightText(item.term, query)}</a></div></td>
 <td class="terms-idx-td-cat" data-label="分野"${hrefAttr}>${escapeHtml(item.category)}</td>
-<td class="terms-idx-td-snippet" data-label="定義（抜粋）"${hrefAttr}>${(item.shortDef || item.definition) ? highlightText(item.shortDef || item.definition, query) : ''}</td>
+<td class="terms-idx-td-snippet" data-label="${escapeHtml(tabMeta.colDetail)}"${hrefAttr}>${detail ? highlightText(detail, query) : ''}</td>
 </tr>`;
   }
 
@@ -203,6 +239,7 @@
       const query = (q?.value || '').trim();
       if (query) params.set('q', query);
       if (activeCat !== 'all') params.set('cat', activeCat);
+      if (activeTab !== 'terms') params.set('tab', activeTab);
       const qs = params.toString();
       const next = qs ? `${TERMS_INDEX_BASE}?${qs}` : TERMS_INDEX_BASE;
       history.replaceState(null, '', next);
@@ -213,28 +250,42 @@
     const params = new URLSearchParams(location.search);
     if (params.has('q') && q) q.value = params.get('q') || '';
     activeCat = params.get('cat') || 'all';
+    activeTab = params.get('tab') || 'terms';
+    if (!TABS.some((t) => t.id === activeTab)) activeTab = 'terms';
     chips.forEach((b) => b.classList.toggle('on', (b.dataset.cat || 'all') === activeCat));
+    tabButtons.forEach((btn) => {
+      const on = (btn.dataset.tab || 'terms') === activeTab;
+      btn.classList.toggle('on', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
   }
 
   function visibleItems() {
-    return sortItems(ITEMS.filter(itemVisible));
+    return sortItems(tabItems(activeTab).filter(itemVisible));
+  }
+
+  function updateTableHead(tabMeta) {
+    if (colItemHead) colItemHead.textContent = tabMeta.colItem;
+    if (colDetailHead) colDetailHead.textContent = tabMeta.colDetail;
   }
 
   function renderTable(visible, query) {
     if (!flatBody) return;
-    flatBody.innerHTML = visible.map((item) => rowHtml(item, query)).join('');
+    const tabMeta = currentTabMeta();
+    updateTableHead(tabMeta);
+    flatBody.innerHTML = visible.map((item) => rowHtml(item, query, tabMeta)).join('');
     bindRows();
   }
 
   function apply(syncUrlFlag = true) {
     const query = q?.value || '';
     const visible = visibleItems();
-    const total = ITEMS.length;
+    const total = tabItems(activeTab).length;
     const shown = visible.length;
 
     renderTable(visible, query);
 
-    if (hit) hit.textContent = `${shown} / ${total} 語`;
+    if (hit) hit.textContent = `${shown} / ${total} 件`;
     if (empty) {
       const hideEmpty = shown !== 0;
       empty.classList.toggle('hide', hideEmpty);
@@ -262,6 +313,16 @@
     syncClear();
     apply();
     q?.focus();
+  }
+
+  function switchTab(tabId) {
+    activeTab = tabId;
+    tabButtons.forEach((btn) => {
+      const on = (btn.dataset.tab || 'terms') === activeTab;
+      btn.classList.toggle('on', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    apply();
   }
 
   if (ITEMS.length >= 60) {
@@ -292,6 +353,12 @@
       btn.classList.add('on');
       activeCat = btn.dataset.cat || 'all';
       apply();
+    });
+  });
+
+  tabButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      switchTab(btn.dataset.tab || 'terms');
     });
   });
 

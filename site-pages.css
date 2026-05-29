@@ -2173,6 +2173,48 @@ a.q-hub-tab-label:hover {
   border-color: var(--accent-border);
   color: var(--accent-emphasis);
 }
+.terms-idx-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+.terms-idx-tab {
+  flex: 1 1 140px;
+  min-width: 0;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text2);
+  border-radius: var(--r2);
+  padding: 10px 12px;
+  font: inherit;
+  font-size: var(--fs-small);
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--sh);
+  text-align: center;
+}
+.terms-idx-tab b {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  color: var(--text3);
+  font-variant-numeric: tabular-nums;
+}
+.terms-idx-tab:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-hover-surface);
+  color: var(--accent-emphasis);
+}
+.terms-idx-tab.on {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: var(--accent-emphasis);
+}
+.terms-idx-tab.on b {
+  color: var(--accent-emphasis);
+}
 .terms-idx-panel {
   background: var(--bg);
   border: 1px solid var(--border);
