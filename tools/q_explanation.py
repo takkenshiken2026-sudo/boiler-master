@@ -126,7 +126,7 @@ def infer_wrong_choice_note(
         parts.append(
             f"「{opt}」は、一見もっともらしく見える場合がありますが、"
             f"正答（{correct}）「{_snippet(correct_text, 56)}」と比べると、"
-            f"{category or '本分野'}の観点で「最も適切でない」記述ではありません。"
+            "学習・制度・実務の観点で「最も問題がある」記述ではありません。"
         )
         parts.append(
             "「最も適切でない」形式では、正しそうな肢が複数あることがあります。"
@@ -141,7 +141,7 @@ def infer_wrong_choice_note(
         if correct and correct_text:
             parts.append(
                 f"正答（{correct}）「{_snippet(correct_text, 56)}」は、"
-                f"{category or '本分野'}の観点で適切な内容です。"
+                "制度・手続・学習法のいずれかの観点で適切な内容です。"
             )
     else:
         parts.append(
@@ -374,31 +374,12 @@ def build_study_hint(page: dict, row: dict) -> str:
 
 
 def split_legacy_explanation(exp: str) -> tuple[str, str]:
-    m = re.match(
-        r"^正[答解]は\s*[（(]?(\d+)[）)]?\s*です[。.]?\s*(.*)$",
-        exp,
-        re.DOTALL,
-    )
+    m = re.match(r"^正解は\s*(\d+)\s*です[。.]?\s*(.*)$", exp, re.DOTALL)
     if m:
         body = norm(m.group(2)) or exp
         summary = f"正答は（{m.group(1)}）です。"
         return summary, body
     return "", exp
-
-
-def default_explanation_summary(page: dict) -> str:
-    correct = page.get("correct")
-    if not correct:
-        return ""
-    mode = question_ask_mode(norm(page.get("stem_plain") or page.get("stem") or ""))
-    if mode == "least_appropriate":
-        return (
-            f"本問は「最も適切でないもの」を選ぶ問題です。"
-            f"正答は（{correct}）です。"
-        )
-    if mode == "most_correct":
-        return f"本問は「適切なもの」を選ぶ問題です。正答は（{correct}）です。"
-    return f"正答は（{correct}）です。"
 
 
 def build_choice_commentary(page: dict, row: dict) -> list[tuple[int, str, str]]:
@@ -430,9 +411,6 @@ def build_explanation_html(page: dict, row: dict) -> str:
         leg_summary, leg_body = split_legacy_explanation(base)
         summary = summary or leg_summary
         correct_body = correct_body or leg_body
-
-    if not summary:
-        summary = default_explanation_summary(page)
 
     parts: list[str] = ['<div class="q-exp">']
     if summary:
