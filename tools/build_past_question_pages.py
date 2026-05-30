@@ -70,12 +70,21 @@ def norm(s: str | None) -> str:
 
 def parse_correct(raw: str, *, max_choice: int = 5) -> int | str | None:
     """一問一答ビルド等からの互換 API。"""
-    from tools.correct_answer_format import parse_correct_page_value
+    from tools.correct_answer_format import (
+        is_valid_correct,
+        parse_correct_page_value,
+    )
     from tools.site_config import extended_correct_answers
 
-    return parse_correct_page_value(
-        raw, extended=extended_correct_answers(), max_choice=max_choice
+    cor_raw = norm(raw)
+    cor = parse_correct_page_value(
+        cor_raw, extended=extended_correct_answers(), max_choice=max_choice
     )
+    if cor is None and extended_correct_answers() and is_valid_correct(
+        cor_raw, max_choice=max_choice
+    ):
+        return cor_raw
+    return cor
 
 
 def build_stem_html(row: dict) -> str:

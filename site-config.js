@@ -105,7 +105,8 @@ window.SITE_CONFIG = {
       "name": "ボイラーの構造に関する知識",
       "aliases": [
         "ボイラーの構造に関する知識",
-        "構造"
+        "構造",
+        "設備・その他"
       ],
       "legacyGlossaryCat": "lawN"
     },
@@ -114,7 +115,8 @@ window.SITE_CONFIG = {
       "name": "ボイラーの取扱いに関する知識",
       "aliases": [
         "ボイラーの取扱いに関する知識",
-        "取扱い"
+        "取扱い",
+        "契約・実務"
       ],
       "legacyGlossaryCat": "rightsN"
     },
@@ -133,7 +135,8 @@ window.SITE_CONFIG = {
       "name": "関係法令",
       "aliases": [
         "関係法令",
-        "法令"
+        "法令",
+        "法令・制度"
       ],
       "legacyGlossaryCat": "lawH"
     }

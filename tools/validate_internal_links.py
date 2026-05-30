@@ -96,9 +96,17 @@ class InternalLinkValidator:
         for base in roots:
             if base.is_file():
                 self.html_files.append(base)
+        skip_name_parts = (
+            "-writing-sample.html",
+            "-diagram-sample.html",
+            "/terms/samples/",
+        )
         for pattern in ("articles/**/*.html", "terms/**/*.html", "q/**/*.html"):
             for path in sorted(ROOT.glob(pattern)):
-                if "/q/orig/" in path.as_posix():
+                posix = path.as_posix()
+                if "/q/orig/" in posix:
+                    continue
+                if any(part in posix for part in skip_name_parts):
                     continue
                 self.html_files.append(path)
         self.existing = {p.resolve() for p in self.html_files}
