@@ -82,7 +82,18 @@ def replace_topic_phrases(text: str, slug: str, topic: str) -> str:
     eng = slug_english(slug)
     out = re.sub(re.escape(eng), topic, text, flags=re.I)
     out = out.replace("action_items", "行動チェックリスト")
-    return out
+    for pat in (
+        rf"（記事:{re.escape(slug)}）",
+        rf"\(記事:{re.escape(slug)}\)",
+        rf"（{re.escape(slug)}）",
+        rf"\({re.escape(slug)}\)",
+    ):
+        out = re.sub(pat, "", out)
+    if slug:
+        out = out.replace(slug, topic)
+    out = re.sub(r"[ \t]+", " ", out)
+    out = re.sub(r"\s+\n", "\n", out)
+    return out.strip()
 
 
 def fix_user_intent(row: dict[str, str], topic: str) -> str:
@@ -119,7 +130,12 @@ def fix_row(row: dict[str, str]) -> bool:
         if not val:
             continue
 
-        has_leak = bool(INTERNAL_TOKEN_RE.search(val)) or eng in val.lower()
+        has_leak = (
+            bool(INTERNAL_TOKEN_RE.search(val))
+            or eng in val.lower()
+            or slug in val
+            or f"（記事:{slug}）" in val
+        )
 
         if col == "user_intent" and (has_leak or USER_INTENT_TEMPLATE.search(val)):
             new_val = fix_user_intent(row, topic)
