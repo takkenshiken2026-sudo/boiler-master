@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""boiler-master 用ビルド（テンプレ検証 + eisei1 SPA データ + 静的 SEO 生成）。"""
+"""One-command build for the exam-site template."""
 
 from __future__ import annotations
 
@@ -18,17 +18,9 @@ def run(cmd: list[str]) -> None:
 
 def main() -> int:
     py = sys.executable
-    run([py, "tools/import_boiler_original_to_practice_csv.py"])
-    run([py, "tools/import_boiler_marubatsu_to_ichimon_csv.py"])
     run([py, "tools/validate_csv.py"])
-    run([py, "tools/sync_past_explanations_from_practice.py"])
-    run([py, "tools/enrich_past_explanation_choices.py"])
-    run([py, "tools/validate_past_explanation_consistency.py"])
-    run([py, "tools/apply_seo_growth.py"])
+    run([py, "tools/audit_editorial_quality.py"])
     run([py, "tools/apply_site_config.py"])
-    run([py, "tools/csv_to_exam_site_master.py"])
-    run([py, "tools/glossary_csv_to_eisei_embed_js.py"])
-    run([py, "tools/csv_to_eisei_ichimon_js.py"])
     run([py, "tools/csv_to_exam_site_past_js.py"])
     run([py, "tools/csv_to_exam_site_ichimondou_js.py"])
     run([py, "tools/build_past_question_pages.py"])
@@ -38,13 +30,12 @@ def main() -> int:
     run([py, "tools/build_compare_pages.py"])
     run([py, "tools/build_numbers_mistakes_pages.py"])
     run([py, "tools/build_sitemap.py"])
-    run([py, "tools/inject_asset_cache_bust.py"])
+    run([py, "tools/validate_sitemap.py"])
     run([py, "tools/validate_generated_seo.py"])
     run([py, "tools/validate_site_integration.py"])
     run([py, "tools/validate_internal_links.py"])
     run([py, "tools/validate_public_content.py"])
     run(["bash", "tools/prepare_public_site.sh"])
-    run([py, "tools/audit_article_freshness.py", "--fail-on-review"])
     return 0
 
 
