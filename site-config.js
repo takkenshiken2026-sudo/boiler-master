@@ -6,7 +6,7 @@ window.SITE_CONFIG = {
   "contactUrl": "https://boiler-master.jp/contact",
   "ga4MeasurementId": "G-0J1YS1XD2K",
   "theme": {
-    "accent": "#333333",
+    "accent": "#7a4a32",
     "accentText": "#ffffff",
     "background": "#f0f0f1",
     "surface": "#ffffff",
