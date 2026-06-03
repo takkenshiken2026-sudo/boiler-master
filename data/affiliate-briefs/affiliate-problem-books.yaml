@@ -1,0 +1,69 @@
+slug: affiliate-problem-books
+theme_key: problem-books
+search_intent: 2級ボイラー技士の過去問・問題集を比較して選びたい
+title: 2級ボイラー技士のおすすめ問題集3選【過去問2026】
+layout: product-comparison
+asp_primary: amazon
+comparison_kind: books
+comparison_title: おすすめ問題集3選（比較）
+price_disclaimer: 価格・在庫は執筆時点（2026-06-04）のAmazon税込参考です。購入前に販売ページで最新版を確認してください。
+products:
+- rank: 1
+  offer_type: book
+  name: 詳解 2級ボイラー技士 過去6回問題集 '26年版
+  publisher: 成美堂出版
+  edition: '''26年版'
+  price_yen: 1650
+  price_note: Amazon税込参考・送料別
+  pages: 272
+  format: B5判
+  asin: '4415241034'
+  image_file: boiler-book-4415241034.webp
+  amazon_url: https://www.amazon.co.jp/dp/4415241034/ref=nosim?tag=ue083093-22
+  for_who: 直近6回分を解説付きで一気に解きたい人
+  highlights:
+  - 過去6回分で演習量を確保しやすい
+  - 詳解付きで復習しやすい定番
+  - 本試験形式の時間配分練習に向く
+- rank: 2
+  offer_type: book
+  name: さくさく解ける! 2級ボイラー技士試験 合格問題集
+  publisher: オーム社
+  edition: 2026年度版
+  price_yen: 2420
+  price_note: Amazon税込参考・送料別
+  pages: 254
+  format: B5判
+  asin: '4274224651'
+  image_file: boiler-book-4274224651.webp
+  amazon_url: https://www.amazon.co.jp/dp/4274224651/ref=nosim?tag=ue083093-22
+  for_who: テキスト読了後に演習メイン1冊を探している人
+  highlights:
+  - さくさくシリーズで初学者向けの解きやすさ
+  - 合格テキストとセットで使いやすい
+  - 4分野の演習をバランスよく回せる
+- rank: 3
+  offer_type: book
+  name: 2級ボイラー技士 過去問題・解答解説集 2026年4月版
+  publisher: TAKARA license
+  edition: 2026年4月版
+  price_yen: 3300
+  price_note: Amazon税込参考・送料別
+  pages: 210
+  format: B5判
+  asin: '4866812753'
+  image_file: boiler-book-4866812753.webp
+  amazon_url: https://www.amazon.co.jp/dp/4866812753/ref=nosim?tag=ue083093-22
+  for_who: 最新実施回ベースで過去問演習をしたい人
+  highlights:
+  - 2026年4月版で比較的新しい過去問を収録
+  - 解答解説付きで弱点科目の特定に向く
+  - 他社過去問との使い分けで演習量を確保
+related_links:
+- past-questions-how-to-use:過去問活用法
+- self-study-guide:独学対策ガイド
+- pass-score:合格点と合格基準
+- affiliate-textbooks-recommend:おすすめテキスト
+- affiliate-mock-exam-materials:公表問題・公式教材
+- exam-overview:試験概要
+operator_note: Amazon tag=ue083093-22。4415241034 / 4274224651 / 4866812753。

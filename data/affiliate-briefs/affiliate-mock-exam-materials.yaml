@@ -1,0 +1,70 @@
+slug: affiliate-mock-exam-materials
+theme_key: mock-exam-materials
+search_intent: 2級ボイラー技士の公表問題・日本ボイラ協会教材を比較して選びたい
+title: 2級ボイラー技士の公表問題・公式教材3選【2026年版】
+layout: product-comparison
+asp_primary: amazon
+comparison_kind: books
+comparison_title: 公表問題・公式教材3選（比較）
+price_disclaimer: 価格は執筆時点（2026-06-04）のAmazon税込参考です。公表問題の収録範囲は公益財団法人 安全衛生技術試験協会（ボイラー検定・公式）で必ず確認してください。
+products:
+- rank: 1
+  offer_type: book
+  name: 2級ボイラー技士試験 公表問題解答解説 2026年版
+  publisher: 日本ボイラ協会
+  edition: 2026年版
+  price_yen: 2200
+  price_note: Amazon税込参考・送料別
+  pages: 248
+  format: B5判
+  asin: '4907619383'
+  image_file: boiler-book-4907619383.webp
+  amazon_url: https://www.amazon.co.jp/dp/4907619383/ref=nosim?tag=ue083093-22
+  for_who: 公表問題の解答解説で本試験形式に慣れたい人
+  highlights:
+  - 日本ボイラ協会発行で公表問題の解説が読める
+  - 試験実施団体系の問題形式に近い演習
+  - テキスト読了後の演習メイン候補
+- rank: 2
+  offer_type: book
+  name: 新版 2級ボイラー技士試験 標準問題集
+  publisher: 日本ボイラ協会
+  edition: 新版
+  price_yen: 2640
+  price_note: Amazon税込参考・送料別
+  pages: 231
+  format: B5判
+  asin: '4907619286'
+  image_file: boiler-book-4907619286.webp
+  amazon_url: https://www.amazon.co.jp/dp/4907619286/ref=nosim?tag=ue083093-22
+  for_who: 協会発行の標準問題で演習量を確保したい人
+  highlights:
+  - 標準問題集で基礎〜標準レベルの演習
+  - 公表問題解答解説との併用がしやすい
+  - 4分野の演習バランスを確認しやすい
+- rank: 3
+  offer_type: book
+  name: 2級ボイラー技士 超速問題集
+  publisher: TAC出版
+  edition: 2026年度版
+  price_yen: 1760
+  price_note: Amazon税込参考・送料別
+  pages: 208
+  format: B5判
+  asin: '4300112517'
+  image_file: boiler-book-4300112517.webp
+  amazon_url: https://www.amazon.co.jp/dp/4300112517/ref=nosim?tag=ue083093-22
+  for_who: TAC超速マスター読了後に演習特化1冊を追加したい人
+  highlights:
+  - 超速マスターと章立ての相性がよい
+  - 問題特化で演習量を増やしやすい
+  - 直前期の総仕上げにも使える
+related_links:
+- exam-overview:試験概要
+- past-questions-how-to-use:過去問活用法
+- pass-score:合格点と合格基準
+- affiliate-textbooks-recommend:おすすめテキスト
+- affiliate-problem-books:おすすめ問題集
+- study-plan-beginner:初学者向け学習計画
+operator_note: Amazon tag=ue083093-22。4907619383 / 4907619286 / 4300112517。さくさく理解(4274220915)は本文・FAQで言及。2026-06-04
+  価格確認。

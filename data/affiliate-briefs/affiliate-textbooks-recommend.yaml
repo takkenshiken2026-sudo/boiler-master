@@ -1,0 +1,70 @@
+slug: affiliate-textbooks-recommend
+theme_key: textbooks-recommend
+search_intent: 2級ボイラー技士の独学向けテキストを比較して選びたい
+title: 2級ボイラー技士のおすすめテキスト3選【2026年版・独学】
+layout: product-comparison
+asp_primary: amazon
+comparison_kind: books
+comparison_title: おすすめテキスト3選（比較）
+price_disclaimer: 価格・在庫・版情報は執筆時点（2026-06-04）のAmazon税込参考です。購入前に必ず販売ページでご確認ください。
+products:
+- rank: 1
+  offer_type: book
+  name: ユーキャンの2級ボイラー技士 合格テキスト&問題集 第2版
+  publisher: ユーキャン / 自由国民社
+  edition: 第2版
+  price_yen: 2200
+  price_note: Amazon税込参考・送料別
+  pages: 344
+  format: B5判
+  asin: '4426615321'
+  image_file: boiler-book-4426615321.webp
+  amazon_url: https://www.amazon.co.jp/dp/4426615321/ref=nosim?tag=ue083093-22
+  for_who: ALL-in-one型で4分野を1冊から始めたい初学者
+  highlights:
+  - 4分野をテキストと演習で1冊にまとめた定番
+  - ユーキャン系列の過去問・問題集と章立てが揃いやすい
+  - 図表中心でボイラー技士の全体像をつかみやすい
+- rank: 2
+  offer_type: book
+  name: 2級ボイラー技士 超速マスター 第2版
+  publisher: TAC出版
+  edition: 第2版
+  price_yen: 2530
+  price_note: Amazon税込参考・送料別
+  pages: 396
+  format: B5判
+  asin: '4300111758'
+  image_file: boiler-book-4300111758.webp
+  amazon_url: https://www.amazon.co.jp/dp/4300111758/ref=nosim?tag=ue083093-22
+  for_who: 演習量を重視し、テキストと問題を厚く回したい人
+  highlights:
+  - TACブランドで独学受験生に選ばれやすい
+  - 解説と演習のバランス型
+  - 超速問題集へのステップアップがしやすい
+- rank: 3
+  offer_type: book
+  name: らくらく突破 改訂新版 2級ボイラー技士 合格教本
+  publisher: 技術評論社
+  edition: 改訂新版
+  price_yen: 2068
+  price_note: Amazon税込参考・送料別
+  pages: 248
+  format: B5判
+  asin: '4774183261'
+  image_file: boiler-book-4774183261.webp
+  amazon_url: https://www.amazon.co.jp/dp/4774183261/ref=nosim?tag=ue083093-22
+  for_who: 教本形式で条文・数値を整理しながら学びたい人
+  highlights:
+  - 合格教本シリーズで論点を段階的に整理
+  - 問題集（別冊）との役割分担が明確
+  - 社会人独学で読み進めやすい分量
+related_links:
+- self-study-guide:独学対策ガイド
+- past-questions-how-to-use:過去問活用法
+- exam-overview:試験概要
+- affiliate-problem-books:おすすめ問題集
+- affiliate-mock-exam-materials:公表問題・公式教材
+- pass-score:合格点と合格基準
+operator_note: Amazon tag=ue083093-22。4426615321 / 4300111758 / 4774183261。2026-06-04
+  価格確認。
