@@ -8,8 +8,10 @@
   "ga4MeasurementId": "G-0J1YS1XD2K",
   "copyright": "",
   "footerDisclaimer": "学習用のコンテンツです。出題・法令の正確な内容は公式情報で必ず確認してください。",
-  "officialOrganization": "公益財団法人 安全衛生技術試験協会",
-  "excludePastExamYears": ["202604"],
+  "officialOrganization": "一般社団法人 日本ボイラー協会",
+  "excludePastExamYears": [
+    "202604"
+  ],
   "theme": {
     "accent": "#7a4a32",
     "accentText": "#ffffff",
@@ -148,9 +150,9 @@
   ],
   "externalLinks": [
     {
-      "label": "安全衛生技術試験協会（公式）",
-      "url": "https://www.exam.or.jp/",
-      "description": "2級ボイラー技士試験の日程・受験案内・公表問題などの公式情報を確認してください。"
+      "label": "ボイラー検定（公式）",
+      "url": "https://www.jbba.or.jp/",
+      "description": "2級ボイラー技士試験の日程・受験案内・公式テキストなどの公式情報を確認してください。"
     }
   ],
   "guideArticleGenres": [

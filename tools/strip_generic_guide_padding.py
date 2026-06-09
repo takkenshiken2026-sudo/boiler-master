@@ -108,6 +108,33 @@ REWRITE_FAQ_BOILER_RE = re.compile(
 BROKEN_TOPIC_DE_RE = re.compile(r"では、を")
 BROKEN_TOPIC_FIX = "では、"
 
+# 量産 batch 後も残る boiler / 全サイト共通の演習テンプレ
+PRACTICE_TOPIC_PAD_RE = re.compile(
+    r"(?:\s|\n)*"
+    r"数値・日程・合格基準は年度で更新されるため、学習前と申込前には[^。]+の最新案内を確認してください。"
+    r"演習で[^。]+に関する設問を解いたら。正解理由と誤答肢の違いを短くメモし、"
+    r"用語解説・比較表・よくある誤答タブで似た論点を比較表で整理すると定着しやすくなります。"
+    r"[。]?",
+    re.MULTILINE,
+)
+PRACTICE10_TAIL_RE = re.compile(
+    r"(?:\s|\n)*"
+    r"演習10問を解き、解説で参照条文を公式テキストで開いて読み返してください。"
+    r"数値・日程・合格基準は年度で更新されるため、学習前と申込前には[^。]+の最新案内を確認してください。"
+    r"[。]?",
+    re.MULTILINE,
+)
+FAQ_VERIFY_BOILER_RE = re.compile(
+    r"「[^」]+」は[^。]+の公式テキスト該当章と[^。]+で確認するのが確実です。"
+    r"[^。]+では、条文の要件（誰が・いつ・何を）を演習問題とセットで押さえてください。"
+)
+READ_THROUGH_FAQ_RE = re.compile(
+    r"読了後は、[^。]+の関連する演習を5問以上解き、"
+    r"間違えた選択肢を用語解説で確認してから関連ガイドへ進んでください。"
+    r"1週間後の解き直し日をカレンダーに入れると定着しやすくなります。"
+    r"(?:数値・主体・手順は[^。]+と照合してください。?)?"
+)
+
 
 def strip_padding_from_text(text: str) -> str:
     if not text:
@@ -128,6 +155,10 @@ def strip_padding_from_text(text: str) -> str:
         out = REWRITE_FAQ_BOILER_RE.sub("", out)
         out = BROKEN_RENKEI_RE.sub("連携", out)
         out = INCOMPLETE_HEADING_TAIL_RE.sub("", out)
+        out = PRACTICE_TOPIC_PAD_RE.sub("", out)
+        out = PRACTICE10_TAIL_RE.sub("", out)
+        out = FAQ_VERIFY_BOILER_RE.sub("", out)
+        out = READ_THROUGH_FAQ_RE.sub("", out)
     out = BROKEN_TOPIC_DE_RE.sub(BROKEN_TOPIC_FIX, out)
     out = re.sub(r"\n{3,}", "\n\n", out)
     out = re.sub(r"[ \t]{2,}", " ", out)
