@@ -9,6 +9,7 @@
   "copyright": "",
   "footerDisclaimer": "学習用のコンテンツです。出題・法令の正確な内容は公式情報で必ず確認してください。",
   "officialOrganization": "公益財団法人 安全衛生技術試験協会",
+  "excludePastExamYears": ["202604"],
   "theme": {
     "accent": "#7a4a32",
     "accentText": "#ffffff",
