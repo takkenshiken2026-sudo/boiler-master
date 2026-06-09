@@ -244,25 +244,31 @@ def _ensure_correct_body(page: dict, row: dict, summary: str, correct_body: str)
         return summary, correct_body
     mode = question_ask_mode(stem)
     parts: list[str] = []
-    if opt_text and correct is not None:
+    if correct is not None:
         if mode == "least_appropriate":
             parts.append(
-                f"正答（{correct}）「{_snippet(opt_text, 56)}」は、"
+                f"正答（{correct}）は、"
                 "設問が問う「最も適切でないもの」に該当します。"
             )
-        else:
-            parts.append(
-                f"正答（{correct}）「{_snippet(opt_text, 56)}」が、"
-                "設問の条件を最もよく満たします。"
-            )
+        elif not summary or _is_thin_enrich_summary(summary):
+            parts.append(f"正答は（{correct}）です。")
     for src in (
         norm(row.get("explanation_correct")),
         norm(row.get("explanation")),
     ):
         if src and not _parrots_stem(stem, src):
-            sent = re.split(r"(?<=[。！？!?])\s*", src)[0].strip()
-            if sent and len(sent) >= 16:
-                parts.append(sent if sent.endswith("。") else sent + "。")
+            for sent in re.split(r"(?<=[。！？!?])\s*", src):
+                s = sent.strip()
+                if not s or _is_thin_enrich_summary(s):
+                    continue
+                if re.fullmatch(r"正答は\d+[。]?", s):
+                    continue
+                if s.startswith("正答は") and len(s) < 20:
+                    continue
+                if len(s) >= 16 and not re.match(r"^（\d+）", s):
+                    parts.append(s if s.endswith("。") else s + "。")
+                    break
+            if len(parts) > (0 if mode == "least_appropriate" else 1):
                 break
     rebuilt = dedupe_prose("\n\n".join(parts))
     return summary, rebuilt or correct_body
@@ -297,16 +303,131 @@ def _is_redundant_answer_lead(summary: str, correct: object) -> bool:
     )
 
 
+def parse_inline_paren_choice_reasons(text: str) -> dict[int, str]:
+    """本文中の (2)理由、(3)理由 形式を肢番号ごとに抽出。"""
+    out: dict[int, str] = {}
+    if not text:
+        return out
+    for chunk in re.split(r"(?<=[、,。])\s*(?=[（(]\d+[）)])|(?=^[（(]\d+[）)])", text):
+        chunk = norm(chunk).lstrip("、,")
+        m = re.match(r"^[（(](\d+)[）)](.+)$", chunk)
+        if not m:
+            continue
+        num = int(m.group(1))
+        note = norm(m.group(2)).strip("、。；; ")
+        if note:
+            out[num] = note
+    return out
+
+
+def _inline_wrong_notes(row: dict) -> dict[int, str]:
+    merged = " ".join(
+        norm(row.get(k))
+        for k in ("explanation", "explanation_correct", "explanation_summary")
+        if norm(row.get(k))
+    )
+    return parse_inline_paren_choice_reasons(merged)
+
+
+def _is_thin_enrich_summary(text: str) -> bool:
+    n = norm(text)
+    if not n:
+        return True
+    if re.search(r"単独の記述としては妥当|設問全体の正答かどうかは他肢と比較", n):
+        return len(n) < 160
+    return False
+
+
+def _substantive_explanation_lead(row: dict) -> str:
+    for key in ("explanation", "explanation_correct"):
+        src = norm(row.get(key))
+        if not src:
+            continue
+        m = re.search(r"正答は[^。]+。", src)
+        if m and len(m.group(0)) >= 20:
+            return m.group(0)
+        for sent in re.split(r"(?<=[。！？!?])\s*", src):
+            s = sent.strip()
+            if len(s) >= 24 and not _is_thin_enrich_summary(s):
+                return s if s.endswith("。") else s + "。"
+    return ""
+
+
+def _keyword_tokens(text: str) -> set[str]:
+    return set(
+        re.findall(r"[\u4e00-\u9fff]{2,}|[A-Za-z]{2,}", _normalize_for_compare(text))
+    )
+
+
+def _keyword_overlap_ratio(a: str, b: str) -> float:
+    ta, tb = _keyword_tokens(a), _keyword_tokens(b)
+    if not ta or not tb:
+        return 0.0
+    return len(ta & tb) / min(len(ta), len(tb))
+
+
+def _overlaps_correct_choice_text(text: str, page: dict) -> bool:
+    cor_idx = _correct_choice_index(page.get("correct"))
+    opts = page.get("opts") or []
+    if not cor_idx or not text or not (1 <= cor_idx <= len(opts)):
+        return False
+    opt = opts[cor_idx - 1]
+    if _keyword_overlap_ratio(text, opt) >= 0.5:
+        return True
+    nt, no = _normalize_for_compare(text), _normalize_for_compare(opt)
+    return len(nt) >= 24 and len(no) >= 24 and (nt in no or no in nt)
+
+
+def _compact_wrong_note_vs_choice(choice_text: str, note: str) -> str:
+    """他肢解説が選択肢全文と酷似する場合、対比だけに短縮する。"""
+    opt, n = norm(choice_text), norm(note)
+    if not opt or not n or _keyword_overlap_ratio(n, opt) < 0.5:
+        return note
+    flips = (
+        (r"小さい", r"大きい"),
+        (r"低い", r"高い"),
+        (r"少ない", r"多い"),
+    )
+    for wpat, rpat in flips:
+        wm = re.search(wpat, opt)
+        rm = re.search(rpat, n)
+        if wm and rm:
+            return f"「{wm.group(0)}」とあるが、正しくは「{rm.group(0)}」の関係です。"
+    if re.search(r"反映する|適している|最も適", opt) and re.search(r"反映しない", n):
+        return (
+            "RMRは動的筋作業向けの指標であり、"
+            "精神的・静的作業の負担は正確に反映されません。"
+        )
+    if re.search(r"全く無関係|常に一定", opt):
+        return "基礎代謝量は体格・性別・年齢等の影響を受けます（「全く一定」は誤り）。"
+    return note
+
+
+def _pick_explanation_lead(page: dict, row: dict, summary: str) -> str:
+    """正答肢と重複するリードは出さない。"""
+    candidates: list[str] = []
+    if summary and not _is_thin_enrich_summary(summary):
+        candidates.append(summary)
+    lead = _substantive_explanation_lead(row)
+    if lead:
+        candidates.append(lead)
+    for cand in candidates:
+        if cand and not _overlaps_correct_choice_text(cand, page):
+            return cand
+    return ""
+
+
 def _strip_choice_echo(note: str, choice_text: str, choice_num: int) -> str:
     """選択肢見出しと重複する引用・肢番号付きリードを除去。"""
     n = norm(note)
     if not n:
         return n
+    if re.match(rf"^（{choice_num}）(?:の内容は|は)", n):
+        return n
     snip = _snippet(choice_text, 48)
     patterns = [
         rf"^（{choice_num}）「{re.escape(snip)}[^」]*」は、?",
         rf"^（{choice_num}）「[^」]+」は、?",
-        rf"^（{choice_num}）",
     ]
     for pat in patterns:
         n2 = re.sub(pat, "", n).strip()
@@ -344,7 +465,9 @@ def _is_thin_choice_note(note: str, mode: str) -> bool:
     if re.search(r"本問で選ぶべき正答は[（(]?\d", n):
         return len(n) < _MIN_CHOICE_NOTE_LEN
     if re.search(r"単独の記述としては法令上妥当", n):
-        return len(n) < _MIN_CHOICE_NOTE_LEN
+        return True
+    if re.search(r"が示す論点とずれています", n) and len(n) < 200:
+        return True
     if re.search(r"基準と照らすと正答になりません", n):
         return True
     return False
@@ -540,6 +663,25 @@ def _wrong_note_context(page: dict, row: dict) -> str:
     return dedupe_prose(" ".join(p for p in parts if p))
 
 
+def _brief_wrong_note_from_choice(choice_text: str) -> str:
+    opt = norm(choice_text)
+    if not opt:
+        return ""
+    if re.search(r"全く無関係|常に一定|必ず.*同じ|影響は少ない|影響はない", opt):
+        return (
+            "「全く無関係」「常に一定」などの限定が実態と異なります。"
+            "数値・主体・条件の取り違えがないか確認してください。"
+        )
+    if re.search(r"小さい|低い|少ない|不要|しない", opt):
+        m = re.search(r"(小さい|低い|少ない)", opt)
+        if m:
+            return (
+                f"「{m.group(1)}」という方向が実際と逆、または限定が強すぎる記述です。"
+                "正答の論点と数値・程度の関係を照合してください。"
+            )
+    return ""
+
+
 def resolve_wrong_choice_note(
     page: dict,
     choice_num: int,
@@ -552,30 +694,43 @@ def resolve_wrong_choice_note(
     stem = norm(page.get("stem_plain") or page.get("stem") or "")
     mode = question_ask_mode(stem)
     context = _wrong_note_context(page, row)
+    inline = _inline_wrong_notes(row)
+    if choice_num in inline and len(inline[choice_num]) >= 8:
+        return dedupe_prose(
+            _compact_wrong_note_vs_choice(choice_text, inline[choice_num])
+        )
+    brief = _brief_wrong_note_from_choice(choice_text)
     note = norm(csv_note)
+    if note and _is_generic_wrong_note(note):
+        note = ""
+    if note and re.search(r"が示す論点とずれています", note):
+        note = ""
     if note and _is_substantive_choice_note(note):
         cleaned = _strip_wrong_note_boilerplate(
             _strip_choice_echo(note, choice_text, choice_num),
             context=context,
         )
         if cleaned and not _is_thin_choice_note(cleaned, mode):
-            return dedupe_prose(cleaned)
+            return dedupe_prose(_compact_wrong_note_vs_choice(choice_text, cleaned))
+    if brief and (not note or _is_thin_choice_note(note, mode) or _is_generic_wrong_note(note)):
+        return brief
     inferred = infer_wrong_choice_note(page, choice_num, choice_text, row)
+    compact = lambda t: dedupe_prose(_compact_wrong_note_vs_choice(choice_text, t))
     if not note:
-        return dedupe_prose(
+        return compact(
             _strip_wrong_note_boilerplate(
                 _strip_choice_echo(inferred, choice_text, choice_num),
                 context=context,
             )
         )
     if _is_thin_choice_note(note, mode) or _is_enrich_boilerplate_note(note):
-        return dedupe_prose(
+        return compact(
             _strip_wrong_note_boilerplate(
                 _strip_choice_echo(inferred, choice_text, choice_num),
                 context=context,
             )
         )
-    return dedupe_prose(
+    return compact(
         _strip_wrong_note_boilerplate(
             _strip_choice_echo(note, choice_text, choice_num),
             context=context,
@@ -958,10 +1113,12 @@ def build_truefalse_group_explanation_html(page: dict, row: dict) -> str:
 
 
 def _wrong_note_dedupe_key(note: str) -> str:
-    """肢番号・選択肢引用を除いた比較用キー。"""
+    """肢番号・長い選択肢引用を除いた比較用キー。"""
     n = norm(note)
+    if re.search(r"正しくは「|の関係です", n) and len(n) < 80:
+        return _normalize_for_compare(n)
     n = re.sub(r"（\d+）", "", n)
-    n = re.sub(r"「[^」]{0,80}」", "", n)
+    n = re.sub(r"「[^」]{20,}」", "", n)
     return _normalize_for_compare(n)
 
 
@@ -980,6 +1137,9 @@ def _is_generic_wrong_note(note: str) -> bool:
         r"が示す論点とずれています",
         r"単体では適切な学習法・正しい対応",
         r"設問形式の読み違え",
+        r"単独の記述としては法令上妥当",
+        r"本問で選ぶべき正答は",
+        r"問題文の条件（",
     )
     return any(re.search(p, n) for p in generic_markers)
 
@@ -1071,6 +1231,30 @@ def build_explanation_html(page: dict, row: dict) -> str:
         correct_body = correct_body or leg_body
 
     summary, correct_body = _ensure_correct_body(page, row, summary, correct_body)
+    summary = _pick_explanation_lead(page, row, summary)
+    if summary and correct_body and _normalize_for_compare(summary) == _normalize_for_compare(
+        correct_body
+    ):
+        correct_body = ""
+    elif correct_body and _is_thin_enrich_summary(correct_body):
+        cb = _substantive_explanation_lead(row) or correct_body
+        correct_body = "" if _overlaps_correct_choice_text(cb, page) else cb
+    elif correct_body and _overlaps_correct_choice_text(correct_body, page):
+        correct_body = ""
+    if summary and correct_body:
+        sm = _normalize_for_compare(summary)
+        kept: list[str] = []
+        for part in re.split(r"\n\n+", correct_body):
+            p = norm(part)
+            if not p:
+                continue
+            pn = _normalize_for_compare(p)
+            if pn == sm or pn in sm or sm in pn:
+                continue
+            if re.fullmatch(r"正答は[（(]?\d+[）)]?です[。]?", p):
+                continue
+            kept.append(p if p.endswith("。") else p + "。")
+        correct_body = dedupe_prose("\n\n".join(kept))
 
     parts: list[str] = ['<div class="q-exp">']
     correct = page.get("correct")
@@ -1079,26 +1263,27 @@ def build_explanation_html(page: dict, row: dict) -> str:
 
     if correct and not page.get("is_invalidated"):
         correct_indices = correct_choice_indices(correct)
-        opts = page.get("opts") or []
         numbered = parse_numbered_choice_notes(norm(row.get("explanation")))
-        parts.append(
-            '<section class="q-exp-section" aria-labelledby="q-exp-correct-h">'
-            '<h3 id="q-exp-correct-h" class="q-exp-h3">正解の理由</h3>'
-        )
+        correct_inner: list[str] = []
         if len(correct_indices) > 1:
             if correct_body and not numbered:
-                parts.append(f"<p>{text_to_html(correct_body)}</p>")
+                correct_inner.append(f"<p>{text_to_html(correct_body)}</p>")
             for idx in sorted(correct_indices):
                 note = numbered.get(idx) or ""
                 if note:
-                    parts.append(
+                    correct_inner.append(
                         f'<p class="q-exp-correct-opt"><strong>（{idx}）</strong> '
                         f"{text_to_html(note)}</p>"
                     )
-        else:
-            if correct_body:
-                parts.append(f"<p>{text_to_html(correct_body)}</p>")
-        parts.append("</section>")
+        elif correct_body:
+            correct_inner.append(f"<p>{text_to_html(correct_body)}</p>")
+        if correct_inner:
+            parts.append(
+                '<section class="q-exp-section" aria-labelledby="q-exp-correct-h">'
+                '<h3 id="q-exp-correct-h" class="q-exp-h3">正解の理由</h3>'
+            )
+            parts.extend(correct_inner)
+            parts.append("</section>")
 
         wrong_items = collapse_wrong_choice_items(
             page, row, build_choice_commentary(page, row)
