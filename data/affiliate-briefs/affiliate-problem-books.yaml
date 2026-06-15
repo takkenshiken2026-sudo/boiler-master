@@ -1,12 +1,12 @@
 slug: affiliate-problem-books
 theme_key: problem-books
 search_intent: 2級ボイラー技士の過去問・問題集を比較して選びたい
-title: 2級ボイラー技士のおすすめ問題集3選【過去問2026】
+title: 2級ボイラー技士のおすすめ問題集3選【2026年版·過去問】
 layout: product-comparison
 asp_primary: amazon
 comparison_kind: books
 comparison_title: おすすめ問題集3選（比較）
-price_disclaimer: 価格・在庫は執筆時点（2026-06-04）のAmazon税込参考です。購入前に販売ページで最新版を確認してください。
+price_disclaimer: 価格・在庫は執筆時点（2026-06-12）のAmazon税込参考です。購入前に販売ページで最新版を確認してください。
 products:
 - rank: 1
   offer_type: book
@@ -60,10 +60,10 @@ products:
   - 解答解説付きで弱点科目の特定に向く
   - 他社過去問との使い分けで演習量を確保
 related_links:
-- past-questions-how-to-use:過去問活用法
-- self-study-guide:独学対策ガイド
+- study-plan:学習計画
 - pass-score:合格点と合格基準
-- affiliate-textbooks-recommend:おすすめテキスト
-- affiliate-mock-exam-materials:公表問題・公式教材
+- exam-format-overview:試験形式概要
+- affiliate-textbooks-recommend:おすすめテキスト3選
 - exam-overview:試験概要
-operator_note: Amazon tag=ue083093-22。4415241034 / 4274224651 / 4866812753。
+operator_note: Amazon tag=ue083093-22。4415241034 / 4274224651 / 4866812753。2026-06-12
+  手書きリライト反映。

@@ -6,7 +6,7 @@ layout: product-comparison
 asp_primary: amazon
 comparison_kind: books
 comparison_title: おすすめテキスト3選（比較）
-price_disclaimer: 価格・在庫・版情報は執筆時点（2026-06-04）のAmazon税込参考です。購入前に必ず販売ページでご確認ください。
+price_disclaimer: 価格・在庫・版情報は執筆時点（2026-06-12）のAmazon税込参考です。購入前に必ず販売ページでご確認ください。
 products:
 - rank: 1
   offer_type: book
@@ -60,11 +60,13 @@ products:
   - 問題集（別冊）との役割分担が明確
   - 社会人独学で読み進めやすい分量
 related_links:
-- self-study-guide:独学対策ガイド
-- past-questions-how-to-use:過去問活用法
-- exam-overview:試験概要
-- affiliate-problem-books:おすすめ問題集
-- affiliate-mock-exam-materials:公表問題・公式教材
+- study-plan:学習計画
+- textbook-selection:テキストの選び方
+- exam-format-overview:試験形式概要
 - pass-score:合格点と合格基準
-operator_note: Amazon tag=ue083093-22。4426615321 / 4300111758 / 4774183261。2026-06-04
-  価格確認。
+- pass-score:合格点と合格基準
+- affiliate-problem-books:おすすめ問題集3選
+- affiliate-mock-exam-materials:公表問題・公式教材3選
+- exam-overview:試験概要
+operator_note: Amazon tag=ue083093-22。4426615321 / 4300111758 / 4774183261。2026-06-12
+  価格確認·手書きリライト反映。

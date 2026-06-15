@@ -6,7 +6,7 @@ layout: product-comparison
 asp_primary: amazon
 comparison_kind: books
 comparison_title: 公表問題・公式教材3選（比較）
-price_disclaimer: 価格は執筆時点（2026-06-04）のAmazon税込参考です。公表問題の収録範囲は公益財団法人 安全衛生技術試験協会（ボイラー検定・公式）で必ず確認してください。
+price_disclaimer: 価格は執筆時点（2026-06-12）のAmazon税込参考です。公表問題の収録範囲はボイラー検定（公式）で必ず確認してください。
 products:
 - rank: 1
   offer_type: book
@@ -60,11 +60,11 @@ products:
   - 問題特化で演習量を増やしやすい
   - 直前期の総仕上げにも使える
 related_links:
-- exam-overview:試験概要
-- past-questions-how-to-use:過去問活用法
+- study-plan:学習計画
 - pass-score:合格点と合格基準
-- affiliate-textbooks-recommend:おすすめテキスト
-- affiliate-problem-books:おすすめ問題集
-- study-plan-beginner:初学者向け学習計画
-operator_note: Amazon tag=ue083093-22。4907619383 / 4907619286 / 4300112517。さくさく理解(4274220915)は本文・FAQで言及。2026-06-04
-  価格確認。
+- exam-format-overview:試験形式概要
+- affiliate-textbooks-recommend:おすすめテキスト3選
+- affiliate-problem-books:おすすめ問題集3選
+- exam-overview:試験概要
+operator_note: Amazon tag=ue083093-22。4907619383 / 4907619286 / 4300112517。さくさく理解(4274220915)はFAQ言及。2026-06-12
+  手書きリライト反映。

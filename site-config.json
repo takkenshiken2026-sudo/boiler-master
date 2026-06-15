@@ -148,6 +148,48 @@
       "legacyGlossaryCat": "lawH"
     }
   ],
+  "guideIndexPicks": {
+    "title": "おすすめのテキスト・問題集・公表問題",
+    "lead": "2026年版の比較記事から、テキスト・問題集・公表問題の選び方へ。",
+    "leadsByHub": {
+      "articles": "2026年版の比較記事から、テキスト・問題集・公表問題の選び方へ。",
+      "terms": "用語暗記と併用するテキスト・問題集の比較記事へ。",
+      "q": "無料演習と併用する問題集・公表問題の比較記事へ。"
+    },
+    "layout": "grid-3",
+    "items": [
+      {
+        "kind": "textbook",
+        "kindLabel": "テキスト",
+        "title": "おすすめテキスト3選【2026年版】",
+        "description": "ユーキャン合格テキスト&問題集・超速マスター・出る順の3冊を比較。4分野を1冊から始める基準を解説します。",
+        "href": "affiliate-textbooks-recommend/",
+        "cta": "3冊を比較する",
+        "image": "images/affiliate/boiler-book-4426615321.webp",
+        "imageAlt": "ユーキャンの2級ボイラー技士 合格テキスト&問題集 第2版 表紙"
+      },
+      {
+        "kind": "problem-book",
+        "kindLabel": "問題集",
+        "title": "おすすめ問題集3選【2026年版】",
+        "description": "成美堂過去6回・公論重要問題・出る順の3冊を比較。テキスト読了後の演習1冊の選び方をまとめます。",
+        "href": "affiliate-problem-books/",
+        "cta": "3冊を比較する",
+        "image": "images/affiliate/boiler-book-4415241034.webp",
+        "imageAlt": "詳解 2級ボイラー技士 過去6回問題集 '26年版 表紙"
+      },
+      {
+        "kind": "mock-exam",
+        "kindLabel": "公表問題",
+        "title": "公表問題・公式教材3選【2026年版】",
+        "description": "日本ボイラ協会の公表問題解説・公式テキスト・過去問の3冊を比較。本試験形式に慣れる1冊の選び方を解説します。",
+        "href": "affiliate-mock-exam-materials/",
+        "cta": "3冊を比較する",
+        "image": "images/affiliate/boiler-book-4907619383.webp",
+        "imageAlt": "2級ボイラー技士試験 公表問題解答解説 2026年版 表紙"
+      }
+    ]
+  },
   "externalLinks": [
     {
       "label": "ボイラー検定（公式）",
