@@ -140,5 +140,13 @@ window.SITE_CONFIG = {
       ],
       "legacyGlossaryCat": "lawH"
     }
-  ]
+  ],
+  "paidMockExam": {
+    "url": "https://note.com/shikaku_master/n/n94a097341ab6",
+    "modeTitle": "予想模試（PDF・3回分）",
+    "modePurpose": "本番形式の40問で実力確認したい",
+    "priceLabel": "¥590",
+    "scoreMeta": "40問×3",
+    "scoreLead": "本番形式の40問"
+  }
 };
