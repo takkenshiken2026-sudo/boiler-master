@@ -6,7 +6,7 @@ layout: product-comparison
 asp_primary: amazon
 comparison_kind: books
 comparison_title: 公表問題・公式教材3選（比較）
-price_disclaimer: 価格は執筆時点（2026-06-12）のAmazon税込参考です。公表問題の収録範囲はボイラー検定（公式）で必ず確認してください。
+price_disclaimer: 価格は執筆時点（2026-06-12）のAmazon税込参考です。公表問題の収録範囲は安全衛生技術試験協会（公式）で必ず確認してください。
 products:
 - rank: 1
   offer_type: book

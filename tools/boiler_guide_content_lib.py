@@ -11,8 +11,8 @@ from typing import Callable
 
 EXAM = "2級ボイラー技士試験"
 EXAM_SHORT = "2級ボイラー"
-OFFICIAL = "ボイラー検定（公式）"
-ORG = "一般社団法人 日本ボイラー協会"
+OFFICIAL = "安全衛生技術試験協会（公式）"
+ORG = "公益財団法人 安全衛生技術試験協会"
 SEVEN_FIELDS = (
     "ボイラーの構造に関する知識",
     "ボイラーの取扱いに関する知識",
