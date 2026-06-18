@@ -16,15 +16,18 @@ import sys
 import unicodedata
 from pathlib import Path
 
+import classify_rules
+
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "data" / "sources" / "hellowork_license_list.tsv"
 OUT = ROOT / "data" / "certifications.csv"
 
 # certifications.csv のスキーマ（事実値の列は空で用意し、後工程で検証して埋める）
 COLUMNS = [
-    "slug", "hellowork_code", "name", "name_raw", "category",
+    "slug", "hellowork_code", "name", "name_raw", "category", "major_category",
     "scope", "is_bucket", "is_duplicate",
-    "type", "authority", "official_url",
+    "type", "type_confidence", "type_reason",
+    "authority", "official_url",
     "eligibility", "exam_format", "fee", "pass_rate", "frequency", "difficulty",
     "related_slugs", "source_checked_at", "status",
 ]
@@ -78,16 +81,22 @@ def main() -> int:
         key = (category, name)
         is_dup = 1 if key in seen_by_cat else 0
         seen_by_cat[key] = True
+        major = classify_rules.major_category(code, category)
+        ctype, conf, reason = classify_rules.classify_type(
+            code, name, category, scope, is_bucket)
         out_rows.append({
             "slug": slugify(code, name),
             "hellowork_code": code,
             "name": name,
             "name_raw": name_raw,
             "category": category,
+            "major_category": major,
             "scope": scope,
             "is_bucket": is_bucket,
             "is_duplicate": is_dup,
-            "type": "",            # 国家/公的/民間（後工程で分類）
+            "type": ctype,            # 国家/公的/民間/要確認/海外
+            "type_confidence": conf,  # high/medium/low
+            "type_reason": reason,
             "authority": "",
             "official_url": "",
             "eligibility": "",
@@ -107,19 +116,29 @@ def main() -> int:
         w.writeheader()
         w.writerows(out_rows)
 
+    from collections import Counter
     total = len(out_rows)
     buckets = sum(r["is_bucket"] for r in out_rows)
     dups = sum(r["is_duplicate"] for r in out_rows)
     overseas = sum(1 for r in out_rows if r["scope"] == "overseas")
     cats = len({r["category"] for r in out_rows})
+    majors = Counter(r["major_category"] for r in out_rows)
+    types = Counter(r["type"] for r in out_rows if not r["is_bucket"])
     indexable = total - buckets - dups
     print(f"wrote {OUT.relative_to(ROOT)}")
     print(f"  total rows      : {total}")
-    print(f"  categories      : {cats}")
+    print(f"  中分類 categories: {cats}")
+    print(f"  大分類 majors   : {len(majors)}")
     print(f"  bucket (xx99)   : {buckets}  (noindex想定)")
     print(f"  duplicates      : {dups}  (noindex想定)")
     print(f"  overseas(8xxx)  : {overseas}")
-    print(f"  candidate pages : {indexable}  (domestic除くバケット/重複)")
+    print(f"  candidate pages : {indexable}")
+    print("  --- 大分類別件数 ---")
+    for k, v in majors.most_common():
+        print(f"    {v:4d}  {k}")
+    print("  --- type別件数(バケット除く) ---")
+    for k, v in types.most_common():
+        print(f"    {v:4d}  {k or '(空)'}")
     return 0
 
 
