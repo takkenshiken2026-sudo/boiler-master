@@ -300,6 +300,31 @@ def meta_description(text: str, limit: int = 155) -> str:
     return one[: limit - 1] + "…"
 
 
+def clean_def_snippet(term: str, short_def: str, definition: str) -> str:
+    """meta description 用に定義文から埋め草・重複を除いた「答え先出し」snippet を作る。
+
+    CSV の short_def / definition には「まず覚えるのは…ということです。たとえば…」等の
+    定型の言い回しと同一文の重複が混ざっており、そのまま description にすると全ページが
+    似た書き出しになる（GSC で弾かれやすい）。ここでは定義そのものを先頭に出し、
+    例示・定型句・重複文を落として、用語ごとに固有のスニペットにする。
+    本文（body）側の品質ゲートには影響しない（description 専用）。
+    """
+    raw = (short_def or definition or "").strip()
+    raw = re.sub(r"^まず覚えるのは[、，]", "", raw)
+    raw = re.split(r"たとえば", raw)[0]
+    raw = re.sub(r"[、，]?ということです[。．]?", "。", raw)
+    raw = re.sub(r"^「?" + re.escape(term) + r"」?は[、，]", "", raw)
+    sentences = [s.strip() for s in re.split(r"(?<=。)", raw) if s.strip()]
+    seen: set[str] = set()
+    out: list[str] = []
+    for s in sentences:
+        key = s.rstrip("。")
+        if key and key not in seen:
+            seen.add(key)
+            out.append(s)
+    return "".join(out).strip()
+
+
 def split_semicolon(s: str) -> list[str]:
     return [x.strip() for x in re.split(r"[;；]", s or "") if x.strip()]
 
@@ -781,8 +806,9 @@ def build_term_html(
     example_answer = norm(entry.get("example_answer"))
 
     title = f"{article_title or term + 'とは？意味・根拠・試験ポイント'}｜{brand_name()}"
+    snippet = clean_def_snippet(term, short_def, definition)
     desc = meta_description(
-        f"{term}の意味、法令・根拠、試験で押さえるポイントを{exam_name()}向けに整理。{short_def or definition}"
+        snippet or f"{term}の意味と試験での出方を{exam_name()}向けに整理。"
     )
     canonical = public_url(base_url, f"terms/{slug_file}")
     root_idx = rel_to_root(rel_path)
