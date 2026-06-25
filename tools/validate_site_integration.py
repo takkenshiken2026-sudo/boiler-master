@@ -655,7 +655,16 @@ _GA4_SKIP_PREFIXES = (
 
 
 def _is_guide_retire_redirect(text: str) -> bool:
-    """build_guide_retire_redirects が書く noindex スタブ（GA4 不要）。"""
+    """noindex メタリフレッシュのリダイレクト stub（GA4 不要）。
+
+    退役記事 stub（"記事移動中"）と用語 URL 救済 stub（"ページが移動しました"）の両方を
+    対象にするため、特定文言ではなく「即時 refresh ＋ noindex」という構造で判定する。
+    """
+    lowered = text.lower()
+    is_refresh_stub = 'http-equiv="refresh"' in lowered and "0;url=" in lowered
+    is_noindex = "noindex" in lowered
+    if is_refresh_stub and is_noindex:
+        return True
     return (
         "記事移動中" in text
         and 'content="noindex, follow"' in text

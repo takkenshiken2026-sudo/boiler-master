@@ -151,18 +151,24 @@ def term_alias_variants(term: str) -> set[str]:
 
 
 def term_slug(term: str, reading: str | dict[str, str] = "", used: dict[str, str] | None = None) -> str:
-    """用語+読みで安定したスラッグ。衝突時は連番を付与。
+    """用語名のみから安定したスラッグを生成。衝突時のみ連番を付与。
 
     テンプレ互換: term_slug(term, used_slugs) も可（reading 省略）。
+
+    ⚠️ SEO 重要: base は **term 単独**でハッシュする。reading を base に含めると
+    CSV の読み追加・修正で公開 URL のハッシュが丸ごと変わり、インデックス済み URL が
+    一斉に 404 化する事故が起きた（全 377 用語に reading を付与した再生成で発生）。
+    URL 安定のため reading は **絶対に base へ入れない**。引数 reading は呼び出し側
+    互換のために残してあるが slug には影響しない。旧 reading 入り URL は
+    main() で生成するリダイレクト stub が救済する。
     """
     if isinstance(reading, dict):
         used = reading
         reading = ""
     if used is None:
         used = {}
-    reading = str(reading).strip() if not isinstance(reading, dict) else ""
-    # reading なしは term のみでハッシュ（既存公開 URL との互換）
-    base = f"{term.strip()}|{reading}" if reading else term.strip()
+    # term 単独でハッシュ（reading は URL に含めない＝URL 不変性を保証）
+    base = term.strip()
     h = hashlib.sha256(base.encode("utf-8")).hexdigest()[:16]
     s = f"g-{h}"
     if s not in used:
@@ -175,6 +181,52 @@ def term_slug(term: str, reading: str | dict[str, str] = "", used: dict[str, str
             used[cand] = base
             return cand
         n += 1
+
+
+def legacy_reading_slug_file(term: str, reading: str, used: dict[str, str]) -> str:
+    """旧スキーム（term|reading でハッシュ）の URL を再現する。
+
+    reading を URL に含めていた時代に Google がインデックスした URL を救済する
+    リダイレクト stub の生成にのみ使う。衝突連番ロジックは旧 term_slug と同一。
+    """
+    term = term.strip()
+    reading = (reading or "").strip()
+    base = f"{term}|{reading}" if reading else term
+    h = hashlib.sha256(base.encode("utf-8")).hexdigest()[:16]
+    s = f"g-{h}"
+    if s not in used:
+        used[s] = base
+        return s + ".html"
+    n = 2
+    while True:
+        cand = f"g-{h}-{n}"
+        if cand not in used:
+            used[cand] = base
+            return cand + ".html"
+        n += 1
+
+
+def redirect_stub_html(canonical_url: str) -> str:
+    """旧 URL → 現行 URL の静的リダイレクト stub（meta refresh=0 は 301 相当に扱われる）。"""
+    esc = html.escape(canonical_url, quote=True)
+    return (
+        "<!DOCTYPE html>\n"
+        '<html lang="ja">\n'
+        "<head>\n"
+        '<meta charset="UTF-8">\n'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+        f'<meta http-equiv="refresh" content="0;url={esc}">\n'
+        f'<link rel="canonical" href="{esc}">\n'
+        '<meta name="robots" content="noindex, follow">\n'
+        "<title>ページが移動しました｜2級ボイラー技士マスター</title>\n"
+        f"<script>location.replace({json.dumps(canonical_url)});</script>\n"
+        "</head>\n"
+        "<body>\n"
+        f'<p>このページは移動しました。<a href="{esc}">新しいページへ移動</a></p>\n'
+        "</body>\n"
+        "</html>\n"
+    )
+
 
 def slug_file_for_glossary_row(row: dict, used_slugs: dict[str, str]) -> str:
     """build_glossary_pages とハブ lookup で同一 slug を使う。"""
@@ -1421,6 +1473,7 @@ def load_glossary_entries(*, strict: bool = True) -> list[dict]:
         entries.append(
             {
                 "term": term,
+                "reading": norm(row.get("reading")),
                 "category": norm(row.get("category")),
                 "tags": norm(row.get("tags")),
                 "short_def": norm(row.get("short_def")),
@@ -1504,6 +1557,18 @@ def main() -> int:
 
     (TERMS_DIR / "index.html").write_text(build_terms_index(entries, base), encoding="utf-8")
 
+    # 旧 reading 入りハッシュ URL（インデックス済み）→ 現行 term 単独 URL のリダイレクト
+    # stub。prune の後に書くので毎ビルド再生成され消えない。
+    stub_used: dict[str, str] = {}
+    stub_count = 0
+    for e in entries:
+        legacy = legacy_reading_slug_file(e["term"], e.get("reading", ""), stub_used)
+        if legacy == e["slug_file"]:
+            continue
+        canonical = public_url(base, f"terms/{e['slug_file']}")
+        (TERMS_DIR / legacy).write_text(redirect_stub_html(canonical), encoding="utf-8")
+        stub_count += 1
+
     from tools.build_term_diagram_sample_pages import build_all as build_term_diagram_samples
 
     build_term_diagram_samples(base_url=base)
@@ -1512,6 +1577,7 @@ def main() -> int:
     sync_index_glossary_slug_map(entries)
 
     print(f"Wrote {len(entries)} term pages under {TERMS_DIR}")
+    print(f"Wrote {stub_count} legacy-URL redirect stubs under {TERMS_DIR}")
     print(f"Wrote {GLOSSARY_SLUG_MAP_JSON}")
     print(f"Updated {INDEX_HTML} (glos-article-slug-map-json)")
     print(f"Wrote {hub_count} field hub pages under {TERMS_DIR}/field-*/")

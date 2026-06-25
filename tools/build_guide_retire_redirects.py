@@ -60,7 +60,12 @@ def load_retired_map() -> dict[str, str]:
 
 
 def article_redirect_href(target: str) -> str:
-    """articles/{slug}/index.html からの相対 URL を組み立てる。"""
+    """articles/{slug}/index.html からの相対 URL を組み立てる。
+
+    リンク先は **末尾スラッシュ形**（記事 canonical と同一）に統一する。index.html 形を
+    出すと、退役 stub が記事の index.html URL を Google に供給し続け、スラッシュ canonical
+    と二重インデックスになるため。
+    """
     t = norm(target)
     if t.startswith(("http://", "https://")):
         return t
@@ -68,9 +73,9 @@ def article_redirect_href(target: str) -> str:
         base = t.rstrip("/")
         if base.endswith(".html"):
             return base
-        return f"{base}/index.html"
+        return f"{base}/"
     slug = t.rstrip("/")
-    return f"../{slug}/index.html"
+    return f"../{slug}/"
 
 
 def write_redirect(articles_dir: Path, slug: str, target_slug: str) -> None:
